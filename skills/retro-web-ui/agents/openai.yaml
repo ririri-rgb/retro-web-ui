@@ -1,0 +1,5 @@
+interface:
+  display_name: "Retro Web UI Transformer"
+  short_description: "Convert web apps to four retro desktop styles safely"
+  brand_color: "#0A246A"
+  default_prompt: "Use $retro-web-ui to convert this app to Windows 98 style while preserving its behavior."

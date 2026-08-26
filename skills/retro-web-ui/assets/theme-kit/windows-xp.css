@@ -1,0 +1,40 @@
+[data-retro-theme="windows-xp"] {
+  --retro-font: Tahoma, system-ui, sans-serif;
+  --retro-font-size: 11px;
+  --retro-face: #ece9d8;
+  --retro-workspace: #5a7edc;
+  --retro-field: #fff;
+  --retro-text: #111;
+  --retro-muted: #777;
+  --retro-border: #7f9db9;
+  --retro-highlight: #fff;
+  --retro-shadow: #aca899;
+  --retro-accent: #245edc;
+  --retro-selection: #316ac5;
+  --retro-focus: #1a4f9c;
+  --retro-progress: #3c9d2f;
+  --retro-control-height: 24px;
+  --retro-gap: 6px;
+  --retro-panel-gap: 9px;
+  --retro-button-x: 12px;
+  --retro-title-height: 28px;
+  --retro-title-background: linear-gradient(180deg, #3e8ef7 0, #0755d5 18%, #0843b7 83%, #2667df 100%);
+  --retro-window-shadow: 0 0 0 3px #0755d5, 2px 3px 10px rgb(0 0 0 / .32);
+  --retro-window-radius: 6px 6px 3px 3px;
+  --retro-radius: 3px;
+  --retro-tab-radius: 4px 4px 0 0;
+  --retro-nav-background: #d6e5fa;
+}
+
+[data-retro-theme="windows-xp"] .retro-window { border-color: #0755d5; }
+[data-retro-theme="windows-xp"] .retro-title-bar { font-size: 12px; text-shadow: 1px 1px #17429a; }
+[data-retro-theme="windows-xp"] :where(button, [type="button"], [type="submit"], [type="reset"], .retro-button) {
+  border-color: #003c74;
+  background: linear-gradient(#fff, #ecebe5 52%, #d5d4ce 53%, #fff);
+  box-shadow: inset 0 0 0 1px #fff;
+}
+[data-retro-theme="windows-xp"] :where(button, [type="submit"], .is-default) { box-shadow: inset 0 0 0 1px #fff, 0 0 0 1px #7396d5; }
+[data-retro-theme="windows-xp"] .retro-tab { border-color: #91a7b4; background: linear-gradient(#fff, #e1e7f5); }
+[data-retro-theme="windows-xp"] .retro-tab[aria-selected="true"] { border-top-color: #e68b2c; box-shadow: inset 0 2px #ffc73c; background: #ece9d8; }
+[data-retro-theme="windows-xp"] .retro-nav-pane { color: #164594; }
+[data-retro-theme="windows-xp"] .retro-progress > span { background: repeating-linear-gradient(90deg, #3a972e 0 11px, #8bd56e 11px 13px, transparent 13px 15px); }

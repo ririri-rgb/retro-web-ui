@@ -1,0 +1,42 @@
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "npm"
+      - name: Install locked fixture dependencies
+        run: npm ci
+      - name: Run publication gates
+        run: |
+          npm run build:fixtures
+          npm audit --omit=dev --audit-level=moderate
+          python scripts/quick_validate_compat.py skills/retro-web-ui
+          python -m unittest discover -s tests -v
+          python tests/visual_smoke.py --check-only --browser /usr/bin/google-chrome
+          git diff --check
+          test -z "$(git status --porcelain --untracked-files=all)"
+      - name: Check tag matches VERSION
+        run: test "${GITHUB_REF_NAME}" = "v$(cat VERSION)"
+      - name: Package reproducibly
+        run: python scripts/package_skill.py
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            dist/*.zip
+            dist/*.sha256
+          generate_release_notes: true

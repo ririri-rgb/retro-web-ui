@@ -1,0 +1,169 @@
+# Retro Web UI
+
+[日本語](README.ja.md)
+
+An open-source Codex Skill that converts an existing web application's interface into one of four desktop-era styles while preserving the application's behavior.
+
+- Windows 98
+- Windows XP
+- Windows 7
+- Japanese Freeware 2000s
+
+This is not a color preset and not a component library tied to React. The Skill first inspects the repository, records hashed behavior signals, chooses a framework-aware integration strategy, maps modern UI structures to desktop-era semantics, and verifies the result with the application's own checks plus diff and visual review.
+
+![Modern interface before conversion](screenshots/showcase-modern.png)
+
+| Windows 98 | Windows XP |
+| --- | --- |
+| ![Windows 98 conversion](screenshots/showcase-windows-98.png) | ![Windows XP conversion](screenshots/showcase-windows-xp.png) |
+
+| Windows 7 | Japanese Freeware 2000s |
+| --- | --- |
+| ![Windows 7 conversion](screenshots/showcase-windows-7.png) | ![Japanese Freeware 2000s conversion](screenshots/showcase-japanese-freeware-2000s.png) |
+
+The screenshots use the same HTML and JavaScript. Only the theme root and CSS change. They demonstrate the bundled primitives; a real conversion also restructures cards, navigation, dialogs, and feedback according to meaning.
+
+Two structurally different conversion checks exercise that semantic step:
+
+| TodoMVC Vanilla ES6 → Windows 98 | React/Vite → Japanese Freeware 2000s |
+| --- | --- |
+| ![TodoMVC semantic Windows 98 conversion](screenshots/todomvc-windows-98.png) | ![React semantic Japanese freeware conversion](screenshots/react-japanese-freeware-2000s.png) |
+
+The TodoMVC result is from a pinned MIT-licensed upstream checkout used temporarily for validation; the repository stores only the screenshot and evidence, not a vendored copy. The React result is the repository's production-built interaction fixture.
+
+## Install
+
+Ask Codex's `$skill-installer` to install this Skill from the GitHub repository after publication, or copy the Skill directory into the current user location:
+
+```bash
+mkdir -p "$HOME/.agents/skills"
+cp -R skills/retro-web-ui "$HOME/.agents/skills/"
+```
+
+For a repository-scoped installation, copy it to the repository's `.agents/skills/retro-web-ui/` directory. Codex also follows symlinked Skill folders. Restart or reload the Codex session if an update does not appear. The core Skill and helper scripts require Python 3.9+ and no third-party Python packages. Visual verification requires an installed Chrome/Chromium-compatible browser only when screenshots are requested. The repository's cross-framework regression harness additionally requires Node.js 20.19+.
+
+## Use from Codex
+
+Invoke it explicitly or describe the target style naturally:
+
+```text
+Use $retro-web-ui to convert this app to Windows 98 style without changing its behavior.
+```
+
+```text
+このアプリを2000年代の日本製Windowsフリーソフト風にして。API、ルーティング、フォームの挙動は維持して。
+```
+
+The Skill supports these canonical theme IDs:
+
+| Theme | UI language |
+| --- | --- |
+| `windows-98` | hard raised/sunken edges, compact property sheets, menus, list views, status segments |
+| `windows-xp` | Luna-like themed states, blue window chrome, task/property panes, slightly increased spacing |
+| `windows-7` | restrained Aero-era frame, command bar/link patterns, thin borders, Explorer/control-panel hierarchy |
+| `japanese-freeware-2000s` | dense Japanese utility layout, toolbars, detailed settings, split/list/log panes, conventional command rows |
+
+## How it preserves behavior
+
+The Skill treats API calls, authentication, routes, state transitions, event handlers, form contracts, validation, persistence, data formats, accessibility state, and test selectors as protected. It prefers scoped CSS and additive markup. Structural changes are made only when needed for semantic fidelity.
+
+Three deterministic helpers reduce avoidable mistakes:
+
+```bash
+python3 -m venv .venv
+.venv/bin/python skills/retro-web-ui/scripts/inspect_project.py /path/to/app --json
+.venv/bin/python skills/retro-web-ui/scripts/behavior_guard.py snapshot /path/to/app --output /tmp/before.json
+.venv/bin/python skills/retro-web-ui/scripts/behavior_guard.py compare /tmp/before.json /path/to/app
+```
+
+On Windows, use `.venv\\Scripts\\python` for the interpreter path.
+
+The guard stores hashes and counts rather than source excerpts or literal values. It catches many changed event, request, route, storage, form, and framework bindings, but it does not prove semantic equivalence. Existing tests and runtime interaction checks remain required.
+
+Generate a namespaced starter bundle:
+
+```bash
+.venv/bin/python skills/retro-web-ui/scripts/bundle_theme.py windows-7 --output src/retro-web-ui.css
+```
+
+Then put the matching `data-retro-theme` on an application root and adapt the markup deliberately. The generator does not mass-rewrite source and refuses to replace a different existing file unless `--force` is passed after review.
+
+## Compatibility
+
+Claims below reflect tests in this repository, not theoretical support.
+
+| Application shape | Evidence | Status |
+| --- | --- | --- |
+| Static HTML + Vanilla JS | detector, behavior baseline/compare, real Chrome interactions, all four rendered themes | Verified |
+| TodoMVC `javascript-es6` real OSS | pinned MIT checkout, semantic markup conversion, original/themed build, identical JS bundle, behavior guard, hash routes, visual inspection | Semantic Windows 98 conversion verified; upstream todo-add baseline failure remains |
+| React 19 + Vite 8 + Tailwind 4 | locked production build, semantic Japanese freeware conversion, unchanged handler/state signals, real click smoke | Converted build and interaction verified; broader React ecosystems remain conditional |
+| Vue 3 SFC + Vite 8 + Bootstrap 5 | locked production build, SFC detection, Bootstrap binding risk, form/model capture | Build fixture verified; component plugins require runtime checks |
+| SvelteKit 2 + Svelte 5 | locked static-adapter production build, binding/command detection | Build fixture verified; SSR/hydration remains project-specific |
+| Next.js 16 App Router + Tailwind/Radix-style components | locked static production build, provider/form-contract detection | Build fixture verified; portals and server/client boundaries are conditional |
+| Other SSR/meta-frameworks, Angular, CSS-in-JS, component libraries | documented scoped fallback and preservation rules | Best-effort until tested in the target project |
+
+See [Compatibility evidence](docs/compatibility.md) for exact coverage and [Validation report](docs/validation-report.md) for commands and observed failures.
+
+## Known limitations and unsupported cases
+
+- A safe general-purpose script cannot infer every card-to-group-box or sidebar-to-property-sheet mapping. Codex performs those meaning-dependent edits.
+- Closed Shadow DOM, canvas/WebGL-only interfaces, cross-origin iframe contents, binary/generated bundles without source, and native desktop apps cannot be safely transformed by this Skill.
+- Portals, virtualized lists, generated class names, CSS-in-JS specificity, Bootstrap data bindings, and SSR hydration need targeted runtime verification.
+- The static audit uses heuristics and can report false positives. A clean audit is not visual proof.
+- The static audit excludes dependency and generated directories; dependency CSS can retain modern styling, so computed-style/screenshot inspection is mandatory.
+- The CSS kit intentionally does not reproduce proprietary Windows icons, fonts, wallpapers, sounds, or extracted system bitmaps.
+- Responsive behavior is preserved where practical, but a fixed-window visual composition may need target-specific narrow-screen compromises.
+
+## Verification
+
+Create the repository-local virtual environment, install the locked JavaScript fixture graph, then run the full gates:
+
+```bash
+python3 -m venv .venv
+npm ci
+npm run build:fixtures
+npm audit --omit=dev --audit-level=moderate
+.venv/bin/python -m unittest discover -s tests -v
+.venv/bin/python scripts/quick_validate_compat.py skills/retro-web-ui
+.venv/bin/python tests/visual_smoke.py --check-only
+```
+
+The Python unit/Skill helpers have no third-party runtime dependency. `npm ci` installs only the locked framework validation harness. Generate the seven showcase screenshots when shared theme CSS changes:
+
+```bash
+.venv/bin/python tests/visual_smoke.py
+```
+
+When using the Skill on another app, also run that app's existing build, typecheck, lint, tests, and representative interactive flows. Review `git diff`, `git diff --check`, the behavior guard report, browser console output, focus order, keyboard access, clipping, overflow, and screenshots.
+
+## Repository layout
+
+```text
+skills/retro-web-ui/
+  SKILL.md                 agent-facing workflow and routing
+  agents/openai.yaml       Codex UI metadata
+  references/              behavior, framework, licensing, mapping, and theme guidance
+  scripts/                 detection, bundling, behavior guard, and UI audit
+  assets/theme-kit/        original namespaced CSS primitives and four themes
+  assets/showcase/         same-behavior visual example
+tests/                     unit, fixture, and browser smoke tests
+docs/                      research, architecture, evidence, and validation records
+screenshots/               generated Before/After documentation images
+```
+
+## Licensing and trademarks
+
+Project code and original CSS are licensed under the [MIT License](LICENSE). No third-party code or proprietary Windows assets are vendored; see [Third-party notices](THIRD_PARTY_NOTICES.md).
+
+Microsoft and Windows are trademarks of the Microsoft group of companies. This independent project is not affiliated with, endorsed by, or sponsored by Microsoft. Theme names are descriptive compatibility/style references.
+
+## Troubleshooting
+
+- **The Skill is not discovered:** confirm the folder is exactly `retro-web-ui` and contains `SKILL.md`; reload Codex.
+- **Styles leak or do not apply:** keep the CSS after the target framework's base layer and verify the `data-retro-theme` root. Avoid global resets.
+- **A library widget ignores the theme:** use its provider/token API or a narrowly scoped adapter; do not add a repository-wide `!important` flood.
+- **Behavior guard reports changes:** inspect every listed file and signal. Added signals can be regressions too.
+- **Screenshot test cannot find a browser:** pass `--browser /absolute/path/to/chrome` or perform the visual pass manually.
+- **`npm ci` cannot use a system cache:** avoid a system-wide permission change and run `npm ci --cache .npm-cache`; the cache path is ignored by Git and can be deleted after validation.
+
+Contributions are welcome; read [CONTRIBUTING.md](CONTRIBUTING.md) and [SECURITY.md](SECURITY.md).

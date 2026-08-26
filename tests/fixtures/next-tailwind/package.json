@@ -1,0 +1,1 @@
+{"name":"next-fixture","private":true,"version":"0.0.0","scripts":{"build":"next build"},"dependencies":{"next":"16.3.3","react":"19.2.8","react-dom":"19.2.8","@radix-ui/react-dialog":"1.1.23"},"devDependencies":{"tailwindcss":"4.3.3","typescript":"7.0.2","@types/react":"19.2.18","@types/node":"22.20.1"}}

@@ -1,0 +1,41 @@
+[data-retro-theme="japanese-freeware-2000s"] {
+  --retro-font: Meiryo, "MS UI Gothic", Tahoma, system-ui, sans-serif;
+  --retro-font-size: 11px;
+  --retro-line-height: 1.3;
+  --retro-face: #efefef;
+  --retro-workspace: #9a9a9a;
+  --retro-field: #fff;
+  --retro-text: #111;
+  --retro-muted: #666;
+  --retro-border: #777;
+  --retro-highlight: #fff;
+  --retro-shadow: #aaa;
+  --retro-accent: #1b4f9c;
+  --retro-selection: #316ac5;
+  --retro-focus: #111;
+  --retro-progress: #35893c;
+  --retro-control-height: 22px;
+  --retro-gap: 4px;
+  --retro-panel-gap: 6px;
+  --retro-button-x: 9px;
+  --retro-title-height: 23px;
+  --retro-title-background: linear-gradient(90deg, #163f7a, #5b83b4);
+  --retro-window-shadow: 1px 2px 6px rgb(0 0 0 / .35);
+  --retro-window-radius: 1px;
+  --retro-radius: 1px;
+  --retro-tab-radius: 2px 2px 0 0;
+  --retro-nav-background: #fff;
+}
+
+[data-retro-theme="japanese-freeware-2000s"] .retro-app { padding: 4px; }
+[data-retro-theme="japanese-freeware-2000s"] .retro-window-body,
+[data-retro-theme="japanese-freeware-2000s"] .retro-content-pane { padding: 6px; }
+[data-retro-theme="japanese-freeware-2000s"] .retro-menubar,
+[data-retro-theme="japanese-freeware-2000s"] .retro-toolbar { min-height: 21px; padding-block: 1px; }
+[data-retro-theme="japanese-freeware-2000s"] .retro-toolbar > :where(a, button) { min-height: 19px; padding-inline: 5px; }
+[data-retro-theme="japanese-freeware-2000s"] :where(button, [type="button"], [type="submit"], [type="reset"], .retro-button) { min-width: 64px; background: linear-gradient(#fff, #e6e6e6); }
+[data-retro-theme="japanese-freeware-2000s"] .retro-list-view :where(th, td),
+[data-retro-theme="japanese-freeware-2000s"] table.retro-table :where(th, td) { padding: 2px 4px; }
+[data-retro-theme="japanese-freeware-2000s"] .retro-statusbar { min-height: 19px; }
+[data-retro-theme="japanese-freeware-2000s"] .retro-log { overflow: auto; min-height: 88px; border: 1px solid #777; background: #fff; padding: 3px; font-family: ui-monospace, monospace; white-space: pre-wrap; }
+[data-retro-theme="japanese-freeware-2000s"] .retro-numeric { text-align: right; font-variant-numeric: tabular-nums; }

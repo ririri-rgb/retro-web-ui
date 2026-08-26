@@ -1,0 +1,17 @@
+{
+  "name": "retro-web-ui-oss",
+  "version": "0.1.0",
+  "private": true,
+  "workspaces": [
+    "tests/fixtures/react-vite",
+    "tests/fixtures/vue-vite",
+    "tests/fixtures/svelte-kit",
+    "tests/fixtures/next-tailwind"
+  ],
+  "scripts": {
+    "build:fixtures": "npm run build --workspace react-fixture && npm run build --workspace vue-fixture && npm run build --workspace svelte-fixture && npm run build --workspace next-fixture"
+  },
+  "engines": {
+    "node": ">=20.19.0"
+  }
+}

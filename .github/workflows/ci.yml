@@ -1,0 +1,46 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  python-minimum:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.9"
+      - name: Verify minimum supported Python
+        run: |
+          python -m unittest discover -s tests -v
+          python scripts/quick_validate_compat.py skills/retro-web-ui
+
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "npm"
+      - name: Install locked fixture dependencies
+        run: npm ci
+      - name: Build framework fixtures
+        run: npm run build:fixtures
+      - name: Audit runtime dependencies
+        run: npm audit --omit=dev --audit-level=moderate
+      - name: Unit and fixture tests
+        run: python -m unittest discover -s tests -v
+      - name: Validate Skill format
+        run: python scripts/quick_validate_compat.py skills/retro-web-ui
+      - name: Browser interaction smoke
+        run: python tests/visual_smoke.py --check-only --browser /usr/bin/google-chrome
+      - name: Diff hygiene
+        run: |
+          git diff --check
+          test -z "$(git status --porcelain --untracked-files=all)"

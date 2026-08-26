@@ -1,0 +1,388 @@
+/* Retro Web UI shared semantic primitives. MIT licensed; no proprietary assets. */
+:where([data-retro-theme]) {
+  --retro-font: system-ui, sans-serif;
+  --retro-font-size: 12px;
+  --retro-line-height: 1.35;
+  --retro-face: #d4d0c8;
+  --retro-workspace: #8b8b8b;
+  --retro-field: #fff;
+  --retro-text: #111;
+  --retro-muted: #555;
+  --retro-border: #666;
+  --retro-light: #fff;
+  --retro-highlight: #e9e9e9;
+  --retro-shadow: #8a8a8a;
+  --retro-dark: #222;
+  --retro-accent: #0a246a;
+  --retro-accent-text: #fff;
+  --retro-selection: #0a246a;
+  --retro-focus: #111;
+  --retro-danger: #a40000;
+  --retro-success: #158000;
+  --retro-radius: 0;
+  --retro-control-height: 24px;
+  --retro-gap: 6px;
+  --retro-panel-gap: 8px;
+  --retro-button-x: 12px;
+  color: var(--retro-text);
+  font-family: var(--retro-font);
+  font-size: var(--retro-font-size);
+  line-height: var(--retro-line-height);
+}
+
+:where([data-retro-theme]),
+:where([data-retro-theme]) *,
+:where([data-retro-theme]) *::before,
+:where([data-retro-theme]) *::after {
+  box-sizing: border-box;
+}
+
+:where([data-retro-theme]) :where(button, input, select, textarea) {
+  color: inherit;
+  font: inherit;
+}
+
+:where([data-retro-theme]) [hidden] {
+  display: none !important;
+}
+
+:where([data-retro-theme]) :where(button, input, select) {
+  min-height: var(--retro-control-height);
+}
+
+:where([data-retro-theme]) :where(button, [type="button"], [type="submit"], [type="reset"], .retro-button) {
+  border: 1px solid var(--retro-border);
+  border-radius: var(--retro-radius);
+  background: var(--retro-face);
+  color: var(--retro-text);
+  min-width: 72px;
+  padding: 2px var(--retro-button-x);
+  text-align: center;
+}
+
+:where([data-retro-theme]) :where(button, [type="button"], [type="submit"], [type="reset"], .retro-button):not(:disabled):hover {
+  filter: brightness(1.03);
+}
+
+:where([data-retro-theme]) :where(button, [type="button"], [type="submit"], [type="reset"], .retro-button):not(:disabled):active {
+  transform: translate(1px, 1px);
+}
+
+:where([data-retro-theme]) :where(button, input, select, textarea, a, [tabindex]):focus-visible {
+  outline: 2px solid var(--retro-focus);
+  outline-offset: 1px;
+}
+
+:where([data-retro-theme]) :where(button, input, select, textarea):disabled {
+  color: var(--retro-muted);
+  cursor: not-allowed;
+  opacity: .72;
+}
+
+:where([data-retro-theme]) :where(input:not([type]), input[type="text"], input[type="email"], input[type="password"], input[type="search"], input[type="number"], input[type="url"], select, textarea) {
+  border: 1px solid var(--retro-border);
+  border-radius: 0;
+  background: var(--retro-field);
+  padding: 2px 5px;
+}
+
+:where([data-retro-theme]) :where(input[type="checkbox"], input[type="radio"]) {
+  accent-color: var(--retro-accent);
+  min-height: auto;
+  margin: 0 4px 0 0;
+  vertical-align: -1px;
+}
+
+:where([data-retro-theme]) label {
+  display: inline-flex;
+  gap: 3px;
+  align-items: center;
+}
+
+:where([data-retro-theme]) a {
+  color: var(--retro-link, #0046a5);
+  text-decoration: underline;
+}
+
+.retro-app {
+  background: var(--retro-workspace);
+  min-height: 100%;
+  padding: var(--retro-panel-gap);
+}
+
+.retro-window {
+  overflow: hidden;
+  border: 1px solid var(--retro-border);
+  border-radius: var(--retro-window-radius, var(--retro-radius));
+  background: var(--retro-face);
+  box-shadow: var(--retro-window-shadow, none);
+}
+
+.retro-title-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: var(--retro-title-height, 24px);
+  padding: 3px 5px;
+  background: var(--retro-title-background, var(--retro-accent));
+  color: var(--retro-accent-text);
+  font-weight: 700;
+  user-select: none;
+}
+
+.retro-title-bar__controls {
+  display: flex;
+  gap: 2px;
+}
+
+.retro-title-bar__controls > button {
+  min-width: var(--retro-caption-size, 19px);
+  width: var(--retro-caption-size, 19px);
+  min-height: var(--retro-caption-size, 19px);
+  height: var(--retro-caption-size, 19px);
+  padding: 0;
+  line-height: 1;
+}
+
+.retro-menubar,
+.retro-toolbar,
+.retro-commandbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 2px;
+  min-height: 24px;
+  border-bottom: 1px solid var(--retro-shadow);
+  background: var(--retro-face);
+  padding: 2px 4px;
+}
+
+.retro-menubar > :where(a, button),
+.retro-toolbar > :where(a, button),
+.retro-commandbar > :where(a, button) {
+  min-width: 0;
+  min-height: 20px;
+  border-color: transparent;
+  background: transparent;
+  padding: 1px 7px;
+  color: inherit;
+  text-decoration: none;
+}
+
+.retro-menubar > :where(a, button):hover,
+.retro-toolbar > :where(a, button):hover,
+.retro-commandbar > :where(a, button):hover {
+  border-color: var(--retro-border);
+  background: var(--retro-highlight);
+}
+
+.retro-window-body,
+.retro-dialog-body {
+  padding: var(--retro-panel-gap);
+}
+
+.retro-group,
+:where([data-retro-theme]) fieldset {
+  min-width: 0;
+  margin: 0;
+  border: 1px solid var(--retro-shadow);
+  border-radius: var(--retro-radius);
+  padding: 12px var(--retro-panel-gap) var(--retro-panel-gap);
+}
+
+.retro-group__title,
+:where([data-retro-theme]) legend {
+  padding: 0 4px;
+  color: inherit;
+  font-weight: 400;
+}
+
+.retro-form-grid {
+  display: grid;
+  grid-template-columns: minmax(90px, max-content) minmax(0, 1fr);
+  gap: var(--retro-gap) 8px;
+  align-items: center;
+}
+
+.retro-form-grid > label {
+  justify-self: end;
+}
+
+.retro-check-list {
+  display: grid;
+  gap: 4px;
+}
+
+.retro-tabs {
+  display: flex;
+  align-items: flex-end;
+  gap: 1px;
+  padding: 0 4px;
+  border-bottom: 1px solid var(--retro-border);
+}
+
+.retro-tab {
+  position: relative;
+  top: 1px;
+  min-width: 64px;
+  min-height: 24px;
+  border: 1px solid var(--retro-border);
+  border-bottom-color: var(--retro-border);
+  border-radius: var(--retro-tab-radius, var(--retro-radius));
+  background: var(--retro-tab-background, var(--retro-face));
+  padding: 3px 9px;
+}
+
+.retro-tab[aria-selected="true"],
+.retro-tab.is-active {
+  z-index: 1;
+  border-bottom-color: var(--retro-face);
+  background: var(--retro-face);
+  font-weight: 600;
+}
+
+.retro-tab-panel {
+  border: 1px solid var(--retro-border);
+  border-top: 0;
+  background: var(--retro-face);
+  padding: var(--retro-panel-gap);
+}
+
+.retro-split-view {
+  display: grid;
+  grid-template-columns: minmax(140px, 28%) minmax(0, 1fr);
+  min-height: 260px;
+}
+
+.retro-nav-pane {
+  border-right: 1px solid var(--retro-border);
+  background: var(--retro-nav-background, var(--retro-field));
+  padding: 4px;
+}
+
+.retro-content-pane {
+  min-width: 0;
+  background: var(--retro-content-background, var(--retro-face));
+  padding: var(--retro-panel-gap);
+}
+
+.retro-list-view {
+  overflow: auto;
+  border: 1px solid var(--retro-border);
+  background: var(--retro-field);
+}
+
+.retro-list-view table,
+:where([data-retro-theme]) table.retro-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: var(--retro-field);
+}
+
+.retro-list-view :where(th, td),
+:where([data-retro-theme]) table.retro-table :where(th, td) {
+  border-right: 1px solid var(--retro-highlight);
+  border-bottom: 1px solid var(--retro-highlight);
+  padding: 3px 6px;
+  text-align: left;
+  white-space: nowrap;
+}
+
+.retro-list-view th,
+:where([data-retro-theme]) table.retro-table th {
+  position: sticky;
+  top: 0;
+  background: var(--retro-face);
+  font-weight: 400;
+}
+
+.retro-list-view tr[aria-selected="true"] > td,
+.retro-list-view tr.is-selected > td {
+  background: var(--retro-selection);
+  color: var(--retro-accent-text);
+}
+
+.retro-statusbar {
+  display: flex;
+  gap: 2px;
+  min-height: 22px;
+  border-top: 1px solid var(--retro-shadow);
+  background: var(--retro-face);
+  padding: 2px;
+}
+
+.retro-statusbar > * {
+  overflow: hidden;
+  flex: 1 1 auto;
+  border: 1px solid var(--retro-shadow);
+  padding: 1px 5px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.retro-dialog {
+  width: min(520px, calc(100vw - 24px));
+}
+
+.retro-dialog__commands {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--retro-gap);
+  margin-top: var(--retro-panel-gap);
+}
+
+.retro-stack {
+  display: grid;
+  gap: var(--retro-panel-gap);
+}
+
+.retro-progress {
+  overflow: hidden;
+  height: 18px;
+  border: 1px solid var(--retro-border);
+  background: var(--retro-field);
+}
+
+.retro-progress > span {
+  display: block;
+  width: var(--value, 0%);
+  height: 100%;
+  background: var(--retro-progress, var(--retro-success));
+}
+
+.retro-command-link {
+  display: grid;
+  grid-template-columns: 18px 1fr;
+  gap: 6px;
+  width: 100%;
+  border: 1px solid transparent;
+  background: transparent;
+  padding: 6px;
+  text-align: left;
+}
+
+.retro-command-link small {
+  display: block;
+  color: var(--retro-muted);
+}
+
+.retro-danger { color: var(--retro-danger); }
+.retro-muted { color: var(--retro-muted); }
+
+@media (max-width: 640px) {
+  .retro-app { padding: 4px; }
+  .retro-split-view { grid-template-columns: 1fr; }
+  .retro-nav-pane { border-right: 0; border-bottom: 1px solid var(--retro-border); }
+  .retro-form-grid { grid-template-columns: 1fr; }
+  .retro-form-grid > label { justify-self: start; }
+  .retro-dialog__commands { flex-wrap: wrap; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :where([data-retro-theme]) *,
+  :where([data-retro-theme]) *::before,
+  :where([data-retro-theme]) *::after {
+    scroll-behavior: auto;
+    transition-duration: .01ms;
+  }
+}

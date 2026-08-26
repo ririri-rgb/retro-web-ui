@@ -1,0 +1,29 @@
+body { margin: 0; background: #f4f7fb; color: #162033; font: 15px/1.5 system-ui, sans-serif; }
+[hidden] { display: none !important; }
+.retro-app { max-width: 1180px; margin: 0 auto; padding: 42px; }
+.retro-window { overflow: hidden; border: 1px solid #e2e7f0; border-radius: 20px; background: #fff; box-shadow: 0 18px 48px rgb(25 47 89 / .14); }
+.retro-title-bar { display: flex; justify-content: space-between; padding: 24px 28px 8px; font-size: 30px; font-weight: 750; }
+.retro-title-bar__controls, .retro-menubar { display: none; }
+.retro-toolbar { display: flex; gap: 12px; align-items: center; padding: 18px 28px; }
+button, input, select { min-height: 42px; border: 1px solid #cfd8e8; border-radius: 12px; background: white; padding: 8px 16px; font: inherit; }
+button { background: #246bfd; color: #fff; border-color: #246bfd; }
+.retro-toolbar label { margin-left: auto; }
+.retro-split-view { display: grid; grid-template-columns: 230px 1fr; border-top: 1px solid #e5e9f2; }
+.retro-nav-pane { padding: 24px; background: #f8faff; }
+.retro-stack { display: grid; gap: 16px; }
+.retro-tab { width: 100%; text-align: left; background: transparent; color: #4d5870; border-color: transparent; }
+.retro-tab[aria-selected="true"] { background: #e7efff; color: #174cae; }
+.retro-content-pane { padding: 28px; }
+fieldset { border: 1px solid #e0e6f0; border-radius: 16px; padding: 22px; }
+legend { padding: 0 6px; font-weight: 700; }
+.retro-form-grid { display: grid; grid-template-columns: 130px 1fr; gap: 14px; align-items: center; }
+.retro-list-view { overflow: auto; border: 1px solid #e0e6f0; border-radius: 16px; }
+table { width: 100%; border-collapse: collapse; }
+th, td { padding: 14px 18px; text-align: left; border-bottom: 1px solid #edf0f5; }
+th { background: #f7f9fc; }
+.retro-progress { overflow: hidden; height: 10px; border-radius: 999px; background: #e7ebf2; }
+.retro-progress span { display: block; height: 100%; width: var(--value); background: #246bfd; }
+.retro-dialog__commands { display: flex; justify-content: flex-end; gap: 12px; }
+.retro-statusbar { display: flex; gap: 20px; padding: 14px 28px; color: #667085; background: #f8faff; }
+.retro-statusbar > :first-child { flex: 1; }
+@media (max-width: 700px) { .retro-app { padding: 8px; } .retro-split-view { grid-template-columns: 1fr; } .retro-form-grid { grid-template-columns: 1fr; } }

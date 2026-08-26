@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Retro Web UI - 設定ユーティリティ</title>
+  <link id="base-theme" rel="stylesheet" href="../theme-kit/retro-base.css">
+  <link id="selected-theme" rel="stylesheet">
+  <link id="modern-theme" rel="stylesheet" href="modern.css" disabled>
+</head>
+<body>
+  <main class="retro-app">
+    <section class="retro-window" aria-labelledby="window-title">
+      <header class="retro-title-bar">
+        <span id="window-title">同期ジョブ管理</span>
+        <span class="retro-title-bar__controls" aria-label="ウィンドウ操作"><button type="button" aria-label="閉じる">×</button></span>
+      </header>
+      <nav class="retro-menubar" aria-label="メインメニュー">
+        <button type="button">ファイル(<u>F</u>)</button><button type="button">編集(<u>E</u>)</button><button type="button">表示(<u>V</u>)</button><button type="button">ツール(<u>T</u>)</button><button type="button">ヘルプ(<u>H</u>)</button>
+      </nav>
+      <div class="retro-toolbar" aria-label="ツールバー">
+        <button type="button" id="run-now">今すぐ実行</button><button type="button">一時停止</button><button type="button">設定...</button>
+        <label>テーマ <select id="theme-picker"><option value="modern">変換前</option><option value="windows-98">Windows 98</option><option value="windows-xp">Windows XP</option><option value="windows-7">Windows 7</option><option value="japanese-freeware-2000s">Japanese Freeware 2000s</option></select></label>
+      </div>
+      <div class="retro-split-view">
+        <nav class="retro-nav-pane" aria-label="設定カテゴリ">
+          <div role="tablist" aria-label="カテゴリ" class="retro-stack">
+            <button class="retro-tab" role="tab" aria-selected="true" aria-controls="panel-jobs" id="tab-jobs">ジョブ一覧</button>
+            <button class="retro-tab" role="tab" aria-selected="false" aria-controls="panel-settings" id="tab-settings">共通設定</button>
+          </div>
+        </nav>
+        <section class="retro-content-pane">
+          <div id="panel-jobs" role="tabpanel" aria-labelledby="tab-jobs" class="retro-stack">
+            <fieldset><legend>表示条件</legend><div class="retro-form-grid"><label for="filter">状態</label><select id="filter"><option>すべて</option><option>実行中</option><option>停止中</option></select><label for="auto-refresh">自動更新</label><label><input id="auto-refresh" type="checkbox" checked> 30秒ごとに更新する</label></div></fieldset>
+            <div class="retro-list-view" tabindex="0" aria-label="同期ジョブ">
+              <table><thead><tr><th>名前</th><th>状態</th><th>最終実行</th><th>件数</th></tr></thead><tbody><tr aria-selected="true"><td>画像バックアップ</td><td>完了</td><td>10:42</td><td>1,248</td></tr><tr><td>文書同期</td><td>実行中</td><td>10:45</td><td>386</td></tr><tr><td>アーカイブ整理</td><td>停止中</td><td>昨日</td><td>72</td></tr></tbody></table>
+            </div>
+            <div class="retro-progress" aria-label="進捗 64%"><span style="--value:64%"></span></div>
+          </div>
+          <form id="panel-settings" role="tabpanel" aria-labelledby="tab-settings" class="retro-stack" hidden>
+            <fieldset><legend>接続</legend><div class="retro-form-grid"><label for="server">サーバー名</label><input id="server" name="server" value="backup.local" required><label for="port">ポート</label><input class="retro-numeric" id="port" name="port" type="number" value="443" min="1" max="65535"></div></fieldset>
+            <fieldset><legend>動作</legend><div class="retro-check-list"><label><input type="checkbox" name="startup" checked> 起動時に前回のジョブを再開する</label><label><input type="checkbox" name="confirm"> 削除前に確認する</label></div></fieldset>
+            <div class="retro-dialog__commands"><button type="submit">OK</button><button type="button">キャンセル</button><button type="submit">適用</button></div>
+          </form>
+        </section>
+      </div>
+      <footer class="retro-statusbar" aria-live="polite"><span id="status">準備完了</span><span>3 ジョブ</span><span>接続: ローカル</span></footer>
+    </section>
+  </main>
+  <script src="showcase.js"></script>
+</body>
+</html>

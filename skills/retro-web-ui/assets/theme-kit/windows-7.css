@@ -1,0 +1,43 @@
+[data-retro-theme="windows-7"] {
+  --retro-font: "Segoe UI", system-ui, sans-serif;
+  --retro-font-size: 12px;
+  --retro-line-height: 1.35;
+  --retro-face: #f0f0f0;
+  --retro-workspace: #8db9dd;
+  --retro-field: #fff;
+  --retro-text: #1e1e1e;
+  --retro-muted: #666;
+  --retro-border: #9aa7b2;
+  --retro-highlight: #eaf6fd;
+  --retro-shadow: #b6b6b6;
+  --retro-accent: #1f6aa5;
+  --retro-selection: #3399ff;
+  --retro-focus: #1a73b8;
+  --retro-progress: #56a33a;
+  --retro-control-height: 25px;
+  --retro-gap: 7px;
+  --retro-panel-gap: 11px;
+  --retro-button-x: 14px;
+  --retro-title-height: 30px;
+  --retro-title-background: linear-gradient(180deg, rgb(243 251 255 / .92), rgb(162 206 236 / .84));
+  --retro-accent-text: #111;
+  --retro-window-shadow: 0 0 0 1px rgb(255 255 255 / .8), 0 8px 24px rgb(21 58 83 / .35);
+  --retro-window-radius: 5px;
+  --retro-radius: 3px;
+  --retro-tab-radius: 3px 3px 0 0;
+  --retro-nav-background: linear-gradient(90deg, #f5f9fc, #e5eef5);
+  --retro-content-background: #fff;
+}
+
+[data-retro-theme="windows-7"] .retro-title-bar { border-bottom: 1px solid #7897ab; font-weight: 400; text-shadow: 0 1px #fff; }
+[data-retro-theme="windows-7"] :where(button, [type="button"], [type="submit"], [type="reset"], .retro-button) {
+  border-color: #707070;
+  background: linear-gradient(#f9f9f9 0, #e8e8e8 48%, #dcdcdc 49%, #f2f2f2 100%);
+  box-shadow: inset 0 0 0 1px #fff;
+}
+[data-retro-theme="windows-7"] :where(button, [type="button"], [type="submit"], [type="reset"], .retro-button):not(:disabled):hover { border-color: #3c7fb1; background: linear-gradient(#fff, #e8f4fc 48%, #c4e5f6 49%, #eaf7ff); }
+[data-retro-theme="windows-7"] .retro-commandbar { background: linear-gradient(#fff, #e7f0f6); }
+[data-retro-theme="windows-7"] .retro-command-link { color: #0067c0; }
+[data-retro-theme="windows-7"] .retro-command-link:hover { border-color: #b8d6ef; background: #eef7ff; }
+[data-retro-theme="windows-7"] .retro-group { background: #fff; }
+[data-retro-theme="windows-7"] .retro-progress > span { background: linear-gradient(#8bd46b, #48a32d 50%, #6fc64e 51%); }

@@ -1,0 +1,44 @@
+[data-retro-theme="windows-98"] {
+  --retro-font: "MS Sans Serif", Tahoma, system-ui, sans-serif;
+  --retro-font-size: 11px;
+  --retro-line-height: 1.25;
+  --retro-face: #c0c0c0;
+  --retro-workspace: #008080;
+  --retro-field: #fff;
+  --retro-text: #000;
+  --retro-muted: #6d6d6d;
+  --retro-border: #000;
+  --retro-light: #fff;
+  --retro-highlight: #dfdfdf;
+  --retro-shadow: #808080;
+  --retro-dark: #0a0a0a;
+  --retro-accent: #000080;
+  --retro-selection: #000080;
+  --retro-focus: #000;
+  --retro-control-height: 23px;
+  --retro-gap: 5px;
+  --retro-panel-gap: 8px;
+  --retro-button-x: 11px;
+  --retro-title-height: 22px;
+  --retro-title-background: linear-gradient(90deg, #000080, #1084d0);
+  --retro-window-shadow: inset 1px 1px #fff, inset -1px -1px #000, inset 2px 2px #dfdfdf, inset -2px -2px #808080;
+  --retro-window-radius: 0;
+  --retro-tab-radius: 2px 2px 0 0;
+}
+
+[data-retro-theme="windows-98"] .retro-window { border: 2px solid #c0c0c0; padding: 2px; }
+[data-retro-theme="windows-98"] .retro-title-bar { text-shadow: 1px 1px #000; }
+[data-retro-theme="windows-98"] :where(button, [type="button"], [type="submit"], [type="reset"], .retro-button) {
+  border: 0;
+  box-shadow: inset -1px -1px #000, inset 1px 1px #fff, inset -2px -2px #808080, inset 2px 2px #dfdfdf;
+}
+[data-retro-theme="windows-98"] :where(button, [type="button"], [type="submit"], [type="reset"], .retro-button):not(:disabled):active {
+  box-shadow: inset 1px 1px #000, inset -1px -1px #fff, inset 2px 2px #808080;
+}
+[data-retro-theme="windows-98"] :where(input:not([type]), input[type="text"], input[type="email"], input[type="password"], input[type="search"], input[type="number"], input[type="url"], select, textarea),
+[data-retro-theme="windows-98"] .retro-list-view {
+  border: 0;
+  box-shadow: inset 1px 1px #808080, inset -1px -1px #fff, inset 2px 2px #000, inset -2px -2px #dfdfdf;
+}
+[data-retro-theme="windows-98"] .retro-statusbar > * { box-shadow: inset 1px 1px #808080, inset -1px -1px #fff; }
+[data-retro-theme="windows-98"] .retro-progress > span { background: repeating-linear-gradient(90deg, #000080 0 10px, transparent 10px 12px); }
