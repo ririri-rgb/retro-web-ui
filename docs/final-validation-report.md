@@ -60,6 +60,7 @@ The evidence supports a useful cross-framework Codex Skill, not a universal conv
 | Portal scope | partial login conversion themed the next route through `body` | distinguish whole-app vs partial roots; lifecycle-scope portal-host mirroring and verify teardown |
 | SSR/hydration evidence | DOM dump stderr did not prove browser console cleanliness | initial server HTML assertion plus Chrome logging and external CDP console/runtime capture |
 | Test independence | app-embedded selftests were the only interaction driver | external normal-URL CDP form/dialog/Escape/focus flows added without a browser dependency |
+| CI environment | Linux Chrome could still write into its profile after the parent process exited | wait for process termination and retry deletion of the exact temporary profile |
 | Static/visual audit | clean heuristics missed dependency-owned dimensions and runtime CSS | computed-style and screenshot inspection remain mandatory |
 
 ## Behavior preservation

@@ -42,6 +42,7 @@ The in-application selftests catch framework state and computed-style details. T
 - Arbitrary modal sleeps were flaky: observable library lifecycle events are awaited.
 - A partial naive-ui-admin conversion leaked a body theme into the next route: the permanent root was localized and portal-host mirroring became component-lifecycle scoped.
 - Chrome stderr alone did not substantiate console/hydration claims: logging plus external CDP warning/error capture was added.
+- The first Linux CI run exposed a Chrome-profile cleanup race after a successful Svelte interaction. The driver now waits for browser exit and retries deletion of its exact temporary profile before the gate completes.
 
 ## Visual evidence boundary
 

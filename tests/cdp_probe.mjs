@@ -202,8 +202,24 @@ try {
   console.log(`${options.scenario} external CDP interaction passed`);
 } finally {
   if (cdp?.socket) cdp.socket.close();
-  browser.kill('SIGTERM');
-  await Promise.race([new Promise((resolve) => browser.once('exit', resolve)), delay(2000)]);
-  if (browser.exitCode === null) browser.kill('SIGKILL');
-  rmSync(profile, { recursive: true, force: true });
+  if (browser.exitCode === null) {
+    browser.kill('SIGTERM');
+    await Promise.race([new Promise((resolve) => browser.once('exit', resolve)), delay(2000)]);
+  }
+  if (browser.exitCode === null) {
+    browser.kill('SIGKILL');
+    await Promise.race([new Promise((resolve) => browser.once('exit', resolve)), delay(2000)]);
+  }
+  let cleanupError;
+  for (let attempt = 0; attempt < 10; attempt += 1) {
+    try {
+      rmSync(profile, { recursive: true, force: true });
+      cleanupError = undefined;
+      break;
+    } catch (error) {
+      cleanupError = error;
+      await delay(100 * (attempt + 1));
+    }
+  }
+  if (cleanupError) throw cleanupError;
 }
