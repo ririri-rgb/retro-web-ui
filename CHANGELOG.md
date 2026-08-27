@@ -4,6 +4,8 @@ All notable changes follow [Keep a Changelog](https://keepachangelog.com/en/1.1.
 
 ## [Unreleased]
 
+## [1.0.0] - 2026-08-27
+
 ### Added
 
 - Runtime semantic-conversion fixtures for React/MUI/Emotion, Vue/Bootstrap, SvelteKit hydration, and Next request-time SSR with Radix/Tailwind.

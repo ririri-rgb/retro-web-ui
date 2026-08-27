@@ -1,6 +1,6 @@
 # Compatibility evidence
 
-Evidence date: 2026-08-27.
+Evidence date: 2026-08-27. This is the bounded compatibility evidence adopted for `v1.0.0`.
 
 Evidence levels used below are cumulative only when explicitly listed: **Detection**, **Build**, **Runtime**, **Behavior**, **Visual**, **Semantic conversion**, and **Real OSS**. A dependency being detected is never treated as runtime support.
 

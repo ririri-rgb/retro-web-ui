@@ -1,6 +1,6 @@
 [project]
 name = "retro-web-ui-skill"
-version = "0.1.0"
+version = "1.0.0"
 description = "Codex Skill for behavior-preserving retro desktop UI conversions"
 requires-python = ">=3.9"
 license = { text = "MIT" }

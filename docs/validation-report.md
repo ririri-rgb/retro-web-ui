@@ -54,4 +54,14 @@ No browser, SDK, container, or system package was installed. Existing Chrome and
 
 ## Release state
 
-`v0.1.0` remains the immutable public baseline. These changes are unreleased development on main; no `v1.0.0` tag or GitHub Release was created in this phase.
+`v0.1.0` remains the immutable public baseline at `6c8cc3ea70ab0a8f891fe9752a664452cfe3ba15`. The repository state described here is the approved `v1.0.0` release candidate; the public tag and GitHub Release are the authoritative publication records rather than mutable text embedded in this report.
+
+## v1.0.0 release audit
+
+The release-only pass repeated the clean lockfile install, five fixture builds, production audit, 32 Python tests, repository and official Skill validators, visual smoke, runtime/external-CDP smoke, screenshot comparison, diff hygiene, version alignment, tracked-file/local-path/secret scans, and standalone archive checks. No capability scope was added.
+
+- All regenerated visual and runtime screenshots were byte-identical to the reviewed repository images.
+- Two `retro-web-ui-1.0.0.zip` builds were byte-identical. Checksum verification, ZIP integrity, and both validators after extraction passed.
+- The standalone Skill ZIP SHA-256 is `a3dc108134508b9e8bf2033e489fd0373a3c0857605e252c4aeef4f2921c245b`. The checksum is unchanged from the preceding candidate because release-only repository metadata is outside the packaged `skills/retro-web-ui` directory.
+- `VERSION`, npm lock metadata, Python project metadata, README installation examples, changelog, release notes, and the tag gate were aligned to `1.0.0` / `v1.0.0`.
+- The full fixture development graph still reports the documented three low-severity SvelteKit dependency findings; the production dependency audit reports zero vulnerabilities.

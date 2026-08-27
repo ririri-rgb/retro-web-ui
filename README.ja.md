@@ -13,18 +13,18 @@
 Codexの`$skill-installer`へ、versionを固定したGitHub上のSkill directoryを指定します。
 
 ```text
-$skill-installer install https://github.com/ririri-rgb/retro-web-ui/tree/v0.1.0/skills/retro-web-ui
+$skill-installer install https://github.com/ririri-rgb/retro-web-ui/tree/v1.0.0/skills/retro-web-ui
 ```
 
 またはtagged releaseをcloneして、user scopeへコピーします。
 
 ```bash
-git clone --branch v0.1.0 --depth 1 https://github.com/ririri-rgb/retro-web-ui.git
+git clone --branch v1.0.0 --depth 1 https://github.com/ririri-rgb/retro-web-ui.git
 mkdir -p "$HOME/.agents/skills"
 cp -R retro-web-ui/skills/retro-web-ui "$HOME/.agents/skills/"
 ```
 
-リポジトリ限定で使う場合は `.agents/skills/retro-web-ui/` へコピーします。Skill本体とhelperはPython 3.9以上だけで動作し、第三者Python packageは不要です。repositoryの検証は `python3 -m venv .venv` で作成した仮想環境から実行します。framework regression harnessは、dependency-free external browser driverのためNode.js 22以上も使用します。`v0.1.0`はstandalone Skillとして公開し、universal Plugins Directory向けpackage化は今回のrelease stabilization scopeには含めません。
+リポジトリ限定で使う場合は `.agents/skills/retro-web-ui/` へコピーします。Skill本体とhelperはPython 3.9以上だけで動作し、第三者Python packageは不要です。repositoryの検証は `python3 -m venv .venv` で作成した仮想環境から実行します。framework regression harnessは、dependency-free external browser driverのためNode.js 22以上も使用します。`v1.0.0`はstandalone Skillとして公開し、universal Plugins Directory向けpackage化は今回のrelease scopeには含めません。
 
 ```bash
 python3 -m venv .venv

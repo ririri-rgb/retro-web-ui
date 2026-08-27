@@ -1,10 +1,10 @@
-# Final validation report: post-v0.1.0 expansion
+# Final validation report: v1.0.0 release basis
 
 Date: 2026-08-27
 
 Baseline: immutable public `v0.1.0` at `6c8cc3ea70ab0a8f891fe9752a664452cfe3ba15`
 
-Recommendation: **Ready for v1.0 release review**. This report does not create or recommend automatically creating a v1 tag.
+Recommendation: **Approved as the evidence basis for v1.0.0**. Release-only versioning, clean validation, security, packaging, tag, and publication checks remain separate gates and do not expand the capability claims in this report.
 
 ## Summary
 
@@ -96,8 +96,8 @@ The selected targets deliberately changed multiple axes at once: CSS-in-JS/deep 
 
 The remaining gaps now cluster around known boundaries—virtualization, canvas/closed DOM, untested frameworks, production authentication, and application-specific full-surface work—rather than another unresolved failure shared by the currently exercised architectures. This is sufficient saturation for a v1 release review, while still leaving an honest roadmap.
 
-## Remaining work before v1
+## v1 release boundary
 
-- Review this evidence and decide whether the explicit boundaries are acceptable for the v1 promise.
-- Perform release-only version/README/changelog updates, clean package reproduction, final secret scan, tag, and GitHub Release in a separate authorized phase.
-- Optionally select one virtualized/table-heavy target before v1 if that category is considered part of the intended v1 promise; current documentation deliberately does not claim it.
+- v1.0.0 adopts the explicit validated, partial, best-effort, and unsupported boundaries above without adding another framework, component library, conversion algorithm, or application surface.
+- Version/README/changelog alignment, clean package reproduction, final secret scan, tag, and GitHub Release are release gates rather than new capability evidence.
+- Virtualized/table-heavy validation remains future work and is deliberately outside the v1.0.0 promise.

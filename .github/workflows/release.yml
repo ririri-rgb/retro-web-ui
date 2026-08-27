@@ -40,4 +40,4 @@ jobs:
           files: |
             dist/*.zip
             dist/*.sha256
-          generate_release_notes: true
+          body_path: docs/releases/${{ github.ref_name }}.md
