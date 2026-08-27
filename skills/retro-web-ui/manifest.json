@@ -1,0 +1,21 @@
+{
+  "manifest_schema_version": 1,
+  "skill_version": "1.1.0.dev0",
+  "required_cli_api": {
+    "min": 1,
+    "max": 1
+  },
+  "behavior": {
+    "snapshot_schema_version": 1,
+    "signal_algorithm": "sha256-normalized-signal-expression-v4"
+  },
+  "themes": {
+    "theme_schema_version": 1,
+    "bundles": {
+      "windows-98": "d910965f778cb38fa39271fa5c30c639629ca1cf3300f587e2970e335753e3a4",
+      "windows-xp": "29ac0a86f83d6825533b93e255b1f2918baa4a9584b7cb0f490c233482c22930",
+      "windows-7": "7ff471aadf1a8d779303ec2780257b80fce022a450df84c7ca084ccb2c56e886",
+      "japanese-freeware-2000s": "478eb43599dce00cdd9236a7c32f45d476e4cd999ab2fb382696107ff946db58"
+    }
+  }
+}

@@ -29,10 +29,11 @@ def audit(root: Path, theme: str) -> dict:
     marker_seen = False
     css_bundle_seen = False
     for current, dirs, names in os.walk(root):
-        dirs[:] = [d for d in dirs if d not in EXCLUDED]
+        current_path = Path(current)
+        dirs[:] = [d for d in dirs if d not in EXCLUDED and not (current_path / d).is_symlink()]
         for name in names:
-            path = Path(current) / name
-            if path.suffix.lower() not in SOURCE_EXTENSIONS or path.stat().st_size > 2_000_000:
+            path = current_path / name
+            if path.is_symlink() or path.suffix.lower() not in SOURCE_EXTENSIONS or path.stat().st_size > 2_000_000:
                 continue
             try:
                 text = path.read_text(encoding="utf-8", errors="ignore")

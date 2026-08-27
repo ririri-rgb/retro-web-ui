@@ -2,6 +2,8 @@
 
 Evidence date: 2026-08-27. This is the bounded compatibility evidence adopted for `v1.0.0`.
 
+The post-v1 CLI candidate reuses this semantic/runtime evidence rather than expanding it. Its additional deterministic evidence is recorded in [CLI + Skill validation report](cli-validation-report.md): six local fixtures exercised manifest/baseline/verify flow, the pinned TodoMVC repository exercised real monorepo app selection and unchanged behavior comparison, and package-manager support remains separated into runtime, historical, or synthetic levels.
+
 Evidence levels used below are cumulative only when explicitly listed: **Detection**, **Build**, **Runtime**, **Behavior**, **Visual**, **Semantic conversion**, and **Real OSS**. A dependency being detected is never treated as runtime support.
 
 | Target | Rendering / styling / architecture | Evidence reached | Verified boundary |
@@ -24,6 +26,7 @@ Evidence levels used below are cumulative only when explicitly listed: **Detecti
 - Components: native controls, controlled inputs, Bootstrap modal, MUI dialog portal, Radix dialog portal, and Naive UI form controls are exercised.
 - Application classes: showcase/settings, authentication, backup utility, Todo, and settings/dialog surfaces are represented. Virtualized/table-heavy and visualization-heavy screens remain weak.
 - Real OSS: TodoMVC and the naive-ui-admin authentication surface are pinned, licensed, non-vendored cases with separate evidence records. The naive-ui-admin conversion is explicitly a dated manual record rather than a CI fixture.
+- CLI/package managers: npm is exercised by current fixtures and TodoMVC; pnpm has the dated naive-ui-admin record plus metadata tests; yarn and Bun have deterministic detection/argv tests only. None of those latter tests is presented as package-manager runtime proof.
 
 ## Failure-driven evidence
 

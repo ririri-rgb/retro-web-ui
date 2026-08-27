@@ -48,10 +48,15 @@ SOURCE_EXTENSIONS = {".html", ".htm", ".js", ".mjs", ".cjs", ".ts", ".jsx", ".ts
 
 def walk_files(root: Path) -> Iterable[Path]:
     for current, dirs, files in os.walk(root):
-        dirs[:] = sorted(d for d in dirs if d not in EXCLUDED and not d.startswith(".cache"))
         current_path = Path(current)
+        dirs[:] = sorted(
+            d for d in dirs
+            if d not in EXCLUDED and not d.startswith(".cache") and not (current_path / d).is_symlink()
+        )
         for name in sorted(files):
-            yield current_path / name
+            path = current_path / name
+            if not path.is_symlink():
+                yield path
 
 
 def relative(path: Path, root: Path) -> str:
@@ -80,6 +85,12 @@ def package_manager_for(package_dir: Path, root: Path) -> Optional[str]:
     while True:
         for lockfile, manager in LOCKFILES.items():
             if (current / lockfile).is_file():
+                return manager
+        package = read_package(current / "package.json")
+        declared = package.get("packageManager")
+        if isinstance(declared, str):
+            manager = declared.split("@", 1)[0]
+            if manager in {"npm", "pnpm", "yarn", "bun"}:
                 return manager
         if current == root or root not in current.parents:
             return None
@@ -130,6 +141,7 @@ def detect(root: Path) -> dict[str, Any]:
             "path": relative(path, root),
             "name": data.get("name"),
             "private": bool(data.get("private", False)),
+            "workspaces": data.get("workspaces"),
             "package_manager": package_manager,
             "dependencies": sorted(deps),
             "scripts": {str(key): str(value) for key, value in sorted(scripts.items())},

@@ -4,6 +4,17 @@ All notable changes follow [Keep a Changelog](https://keepachangelog.com/en/1.1.
 
 ## [Unreleased]
 
+### Added
+
+- Installable `retro-web-ui` Python CLI with versioned JSON output for project analysis, environment diagnostics, behavior snapshots/comparison, theme assets, static audit, and read-only verification aggregation.
+- Machine-readable Skill manifest covering CLI API compatibility, behavior signal contracts, and deterministic theme bundle digests.
+- Monorepo-aware frontend candidate selection that requires an explicit `--app` when several applications are plausible.
+
+### Changed
+
+- Promoted the established v1.0 deterministic helpers into a shared Python package consumed by both the CLI and the Codex Skill while retaining the legacy script entry points.
+- Reserved semantic conversion, application-specific repair, target-command selection, and visual judgment for the Skill instead of introducing an unsafe universal converter.
+
 ## [1.0.0] - 2026-08-27
 
 ### Added

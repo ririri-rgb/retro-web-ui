@@ -6,14 +6,14 @@
 [![GitHub release](https://img.shields.io/github/v/release/ririri-rgb/retro-web-ui)](https://github.com/ririri-rgb/retro-web-ui/releases/latest)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
-An open-source Codex Skill that converts an existing web application's interface into one of four desktop-era styles while preserving the application's behavior.
+An open-source deterministic CLI + Codex Skill that converts an existing web application's interface into one of four desktop-era styles while preserving the application's behavior.
 
 - Windows 98
 - Windows XP
 - Windows 7
 - Japanese Freeware 2000s
 
-This is not a color preset and not a component library tied to React. The Skill first inspects the repository, records hashed behavior signals, chooses a framework-aware integration strategy, maps modern UI structures to desktop-era semantics, and verifies the result with the application's own checks plus diff and visual review.
+This is not a color preset and not a component library tied to React. The CLI makes repeatable inspection, behavior signals, theme assets, diagnostics, and verification evidence machine-readable. The Skill uses that evidence to choose a framework-aware integration strategy, map modern UI structures to desktop-era semantics, and perform the contextual/runtime/visual review that a deterministic tool cannot safely replace.
 
 ![Modern interface before conversion](screenshots/showcase-modern.png)
 
@@ -69,7 +69,19 @@ cp -R retro-web-ui/skills/retro-web-ui "$HOME/.agents/skills/"
 
 For a repository-scoped installation, copy it to the repository's `.agents/skills/retro-web-ui/` directory. Codex also follows symlinked Skill folders. Restart or reload the Codex session if an update does not appear. The core Skill and helper scripts require Python 3.9+ and no third-party Python packages. Visual verification requires an installed Chrome/Chromium-compatible browser only when screenshots are requested. The repository's cross-framework regression harness additionally requires Node.js 22+ for its dependency-free external browser driver.
 
-Version `1.0.0` is distributed as one standalone Skill. It is not a universal Plugins Directory package; broader plugin packaging is outside this release's scope.
+Version `1.0.0` remains the latest stable standalone Skill release. The current unreleased `1.1.0.dev0` source adds an installable CLI while retaining the standalone Skill layout and legacy helper entry points.
+
+### Install the CLI from a checkout
+
+The CLI has no third-party runtime dependency. Install the current checkout into an isolated environment:
+
+```bash
+python3 -m venv .venv
+.venv/bin/python -m pip install .
+.venv/bin/retro-web-ui info --json
+```
+
+On Windows, use `.venv\Scripts\python` and `.venv\Scripts\retro-web-ui`. A release wheel and source distribution are built from the same Skill source tree and contain the matching manifest, theme assets, instructions, and shared core. Codex discovery still requires the Skill installation above; installing the CLI alone does not copy it into `.agents/skills`.
 
 ## Use from Codex
 
@@ -96,26 +108,41 @@ The Skill supports these canonical theme IDs:
 
 The Skill treats API calls, authentication, routes, state transitions, event handlers, form contracts, validation, persistence, data formats, accessibility state, and test selectors as protected. It prefers scoped CSS and additive markup. Structural changes are made only when needed for semantic fidelity.
 
-Three deterministic helpers reduce avoidable mistakes:
+The unified CLI reduces avoidable repeated reasoning and gives Codex one versioned JSON contract:
 
 ```bash
 python3 -m venv .venv
-.venv/bin/python skills/retro-web-ui/scripts/inspect_project.py /path/to/app --json
-.venv/bin/python skills/retro-web-ui/scripts/behavior_guard.py snapshot /path/to/app --output /tmp/before.json
-.venv/bin/python skills/retro-web-ui/scripts/behavior_guard.py compare /tmp/before.json /path/to/app
+.venv/bin/python skills/retro-web-ui/scripts/retro_web_ui.py info --json
+.venv/bin/python skills/retro-web-ui/scripts/retro_web_ui.py analyze /path/to/app --json
+.venv/bin/python skills/retro-web-ui/scripts/retro_web_ui.py behavior snapshot /path/to/app --output /tmp/before.json --json
+.venv/bin/python skills/retro-web-ui/scripts/retro_web_ui.py verify /path/to/app --theme windows-7 --baseline /tmp/before.json --json
 ```
 
 On Windows, use `.venv\\Scripts\\python` for the interpreter path.
 
-The guard stores hashes and counts rather than source excerpts or literal values. It catches many changed event, request, route, storage, form, and framework bindings, but it does not prove semantic equivalence. Existing tests and runtime interaction checks remain required.
+The guard stores hashes and counts rather than source excerpts or literal values. It catches many changed event, request, route, storage, form, and framework bindings, but it does not prove semantic equivalence. Existing tests and runtime interaction checks remain required. Exit `1` means review is required, `2` is invalid input or a refused unsafe write, and `3` is a schema/version mismatch.
 
 Generate a namespaced starter bundle:
 
 ```bash
-.venv/bin/python skills/retro-web-ui/scripts/bundle_theme.py windows-7 --output src/retro-web-ui.css
+.venv/bin/python skills/retro-web-ui/scripts/retro_web_ui.py theme bundle windows-7 --output src/retro-web-ui.css --json
 ```
 
 Then put the matching `data-retro-theme` on an application root and adapt the markup deliberately. The generator does not mass-rewrite source and refuses to replace a different existing file unless `--force` is passed after review.
+
+## CLI capabilities and boundary
+
+| Command | Deterministic capability | Writes target files? |
+| --- | --- | --- |
+| `info` | CLI/Skill/behavior/theme contract compatibility | No |
+| `analyze` | project/app candidates, framework/style/rendering/risk evidence, verification argv | No |
+| `doctor` | Python, Git, package-manager, app-selection, and manifest diagnostics | No |
+| `behavior snapshot` / `compare` | explicit hashed baseline artifact and protected-signal comparison | Snapshot only |
+| `theme list` / `bundle` | theme IDs, digests, and deterministic namespaced CSS | Bundle only with `--output` |
+| `audit` | static modern-style residue and integration heuristics | No |
+| `verify` | read-only aggregation of analysis, doctor, audit, and behavior evidence | No |
+
+`--json` emits one envelope with stable `schema_version`, tool/API version, command, status, result, diagnostics, and read-only metadata. Monorepos with several plausible frontend applications return `APP_SELECTION_REQUIRED` until `--app` is explicit. The CLI never installs dependencies, silently runs inferred project scripts, or performs semantic conversion. See the [CLI contract](skills/retro-web-ui/references/cli.md) and [boundary rationale](docs/cli-boundary.md).
 
 ## Compatibility
 
@@ -133,11 +160,12 @@ Claims below reflect tests in this repository, not theoretical support.
 | `naive-ui-admin` real OSS login | pinned MIT checkout, build, Naive UI/Pinia/router flow, real demo login, route/theme cleanup, normal/narrow visual review | Dated manual authentication-surface record; not CI, dashboard not converted |
 | Nuxt, Angular, Astro, other CSS-in-JS and complex libraries | detector or documented scoped fallback only | Best-effort until tested in the target project |
 
-See [Compatibility evidence](docs/compatibility.md) for exact coverage, the [Validation report](docs/validation-report.md) for current gates, and the [Final validation report](docs/final-validation-report.md) for the evidence supporting v1.0.0.
+See [Compatibility evidence](docs/compatibility.md) for exact coverage, the [v1 Validation report](docs/validation-report.md), the [Final validation report](docs/final-validation-report.md) supporting v1.0.0, and the [CLI + Skill validation report](docs/cli-validation-report.md) for the unreleased architecture candidate.
 
 ## Known limitations and unsupported cases
 
 - A safe general-purpose script cannot infer every card-to-group-box or sidebar-to-property-sheet mapping. Codex performs those meaning-dependent edits.
+- The CLI is not an automatic converter. Runtime behavior, target-native command selection, application-specific CSS/portal/SSR repair, accessibility review, and visual fidelity remain Skill responsibilities.
 - Closed Shadow DOM, canvas/WebGL-only interfaces, cross-origin iframe contents, binary/generated bundles without source, and native desktop apps cannot be safely transformed by this Skill.
 - Portals, virtualized lists, generated class names, CSS-in-JS specificity, Bootstrap data bindings, and SSR hydration always need target-specific runtime verification even where one representative fixture now passes.
 - The static audit uses heuristics and can report false positives. A clean audit is not visual proof.
@@ -156,6 +184,10 @@ npm run build:fixtures
 npm audit --omit=dev --audit-level=moderate
 .venv/bin/python -m unittest discover -s tests -v
 .venv/bin/python scripts/quick_validate_compat.py skills/retro-web-ui
+.venv/bin/python -m pip install "setuptools>=69" "build>=1.2,<2"
+.venv/bin/python scripts/package_cli.py --output /tmp/retro-cli-a
+.venv/bin/python scripts/package_cli.py --output /tmp/retro-cli-b
+.venv/bin/python tests/package_smoke.py /tmp/retro-cli-a --compare /tmp/retro-cli-b
 .venv/bin/python tests/visual_smoke.py --check-only
 .venv/bin/python tests/runtime_smoke.py --check-only
 ```
@@ -173,14 +205,17 @@ When using the Skill on another app, also run that app's existing build, typeche
 ```text
 skills/retro-web-ui/
   SKILL.md                 agent-facing workflow and routing
+  manifest.json            Skill/CLI/behavior/theme compatibility contract
+  __init__.py, core/       installable shared Python API
   agents/openai.yaml       Codex UI metadata
   references/              behavior, framework, licensing, mapping, and theme guidance
-  scripts/                 detection, bundling, behavior guard, and UI audit
+  scripts/                 unified CLI plus backward-compatible deterministic helpers
   assets/theme-kit/        original namespaced CSS primitives and four themes
   assets/showcase/         same-behavior visual example
 tests/                     unit, fixture, and browser smoke tests
 docs/                      research, architecture, evidence, and validation records
 screenshots/               generated Before/After documentation images
+scripts/package_cli.py     reproducible wheel/sdist builder
 ```
 
 ## Licensing and trademarks
@@ -195,6 +230,8 @@ Microsoft and Windows are trademarks of the Microsoft group of companies. This i
 - **Styles leak or do not apply:** keep the CSS after the target framework's base layer and verify the `data-retro-theme` root. Avoid global resets.
 - **A library widget ignores the theme:** use its provider/token API or a narrowly scoped adapter; do not add a repository-wide `!important` flood.
 - **Behavior guard reports changes:** inspect every listed file and signal. Added signals can be regressions too.
+- **CLI reports `APP_SELECTION_REQUIRED`:** rerun `analyze`, `doctor`, or `verify` with the intended app path or package name via `--app`; do not let it guess in a monorepo.
+- **CLI reports a contract mismatch:** use the CLI bundled with the same Skill checkout and create a fresh baseline only after `info --json` reports compatibility.
 - **Screenshot test cannot find a browser:** pass `--browser /absolute/path/to/chrome` or perform the visual pass manually.
 - **`npm ci` cannot use a system cache:** avoid a system-wide permission change and run `npm ci --cache .npm-cache`; the cache path is ignored by Git and can be deleted after validation.
 

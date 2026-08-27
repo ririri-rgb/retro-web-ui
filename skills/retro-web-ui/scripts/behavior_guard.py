@@ -96,10 +96,11 @@ def without_comments(text: str) -> str:
 
 def files(root: Path) -> Iterable[Path]:
     for current, dirs, names in os.walk(root):
-        dirs[:] = [d for d in dirs if d not in EXCLUDED]
+        current_path = Path(current)
+        dirs[:] = [d for d in dirs if d not in EXCLUDED and not (current_path / d).is_symlink()]
         for name in names:
-            path = Path(current) / name
-            if path.suffix.lower() in EXTENSIONS and path.stat().st_size <= 2_000_000:
+            path = current_path / name
+            if not path.is_symlink() and path.suffix.lower() in EXTENSIONS and path.stat().st_size <= 2_000_000:
                 yield path
 
 

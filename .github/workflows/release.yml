@@ -21,6 +21,8 @@ jobs:
           cache: "npm"
       - name: Install locked fixture dependencies
         run: npm ci
+      - name: Install Python release tooling
+        run: python -m pip install "setuptools>=69" "build>=1.2,<2"
       - name: Run publication gates
         run: |
           npm run build:fixtures
@@ -29,15 +31,22 @@ jobs:
           python -m unittest discover -s tests -v
           python tests/visual_smoke.py --browser /usr/bin/google-chrome --output "$RUNNER_TEMP/retro-showcase"
           python tests/runtime_smoke.py --browser /usr/bin/google-chrome --output "$RUNNER_TEMP/retro-runtime"
+          python scripts/package_cli.py --output "$RUNNER_TEMP/retro-cli-a"
+          python scripts/package_cli.py --output "$RUNNER_TEMP/retro-cli-b"
+          python tests/package_smoke.py "$RUNNER_TEMP/retro-cli-a" --compare "$RUNNER_TEMP/retro-cli-b"
           git diff --check
           test -z "$(git status --porcelain --untracked-files=all)"
       - name: Check tag matches VERSION
         run: test "${GITHUB_REF_NAME}" = "v$(cat VERSION)"
       - name: Package reproducibly
-        run: python scripts/package_skill.py
+        run: |
+          python scripts/package_skill.py
+          python scripts/package_cli.py
       - uses: softprops/action-gh-release@v2
         with:
           files: |
             dist/*.zip
+            dist/*.whl
+            dist/*.tar.gz
             dist/*.sha256
           body_path: docs/releases/${{ github.ref_name }}.md

@@ -1,9 +1,50 @@
+[build-system]
+requires = ["setuptools>=69"]
+build-backend = "setuptools.build_meta"
+
 [project]
 name = "retro-web-ui-skill"
-version = "1.0.0"
-description = "Codex Skill for behavior-preserving retro desktop UI conversions"
+version = "1.1.0.dev0"
+description = "Deterministic CLI and Codex Skill for behavior-preserving retro desktop UI conversions"
+readme = "README.md"
 requires-python = ">=3.9"
-license = { text = "MIT" }
+license = "MIT"
+license-files = ["LICENSE"]
+authors = [{ name = "retro-web-ui contributors" }]
+classifiers = [
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3 :: Only",
+]
+
+[project.optional-dependencies]
+release = ["build>=1.2,<2"]
+
+[project.urls]
+Homepage = "https://github.com/ririri-rgb/retro-web-ui"
+Repository = "https://github.com/ririri-rgb/retro-web-ui"
+Issues = "https://github.com/ririri-rgb/retro-web-ui/issues"
+
+[project.scripts]
+retro-web-ui = "retro_web_ui.scripts.retro_web_ui:main"
+
+[tool.setuptools]
+packages = ["retro_web_ui", "retro_web_ui.core", "retro_web_ui.scripts"]
+package-dir = { retro_web_ui = "skills/retro-web-ui" }
+include-package-data = false
+
+[tool.setuptools.package-data]
+retro_web_ui = [
+  "SKILL.md",
+  "LICENSE",
+  "manifest.json",
+  "agents/*.yaml",
+  "assets/showcase/*.css",
+  "assets/showcase/*.html",
+  "assets/showcase/*.js",
+  "assets/theme-kit/*.css",
+  "references/*.md",
+  "references/themes/*.md",
+]
 
 [tool.ruff]
 line-length = 140
