@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "retro-web-ui-skill"
-version = "1.1.0.dev0"
+version = "1.1.0"
 description = "Deterministic CLI and Codex Skill for behavior-preserving retro desktop UI conversions"
 readme = "README.md"
 requires-python = ">=3.9"

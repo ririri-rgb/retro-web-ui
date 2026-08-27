@@ -13,18 +13,18 @@
 Codexの`$skill-installer`へ、versionを固定したGitHub上のSkill directoryを指定します。
 
 ```text
-$skill-installer install https://github.com/ririri-rgb/retro-web-ui/tree/v1.0.0/skills/retro-web-ui
+$skill-installer install https://github.com/ririri-rgb/retro-web-ui/tree/v1.1.0/skills/retro-web-ui
 ```
 
 またはtagged releaseをcloneして、user scopeへコピーします。
 
 ```bash
-git clone --branch v1.0.0 --depth 1 https://github.com/ririri-rgb/retro-web-ui.git
+git clone --branch v1.1.0 --depth 1 https://github.com/ririri-rgb/retro-web-ui.git
 mkdir -p "$HOME/.agents/skills"
 cp -R retro-web-ui/skills/retro-web-ui "$HOME/.agents/skills/"
 ```
 
-リポジトリ限定で使う場合は `.agents/skills/retro-web-ui/` へコピーします。Skill本体とCLI runtimeはPython 3.9以上だけで動作し、第三者runtime packageは不要です。`v1.0.0`は最新の安定版Skillで、現在の未公開`1.1.0.dev0` sourceはinstallable CLIを追加しています。
+リポジトリ限定で使う場合は `.agents/skills/retro-web-ui/` へコピーします。Skill本体とCLI runtimeはPython 3.9以上だけで動作し、第三者runtime packageは不要です。`v1.1.0`が現在の安定版CLI + Skillで、standalone Skill構成と`v1.0.0`のlegacy helper entry pointを維持しています。
 
 CLIをcheckoutから仮想環境へ導入する場合:
 
@@ -66,4 +66,4 @@ Skillは同梱CLIのmanifest整合を確認し、対象repositoryとapp候補を
 - Next/Radix、MUI/Emotion、Bootstrap、Naive UIの代表ケースは検証済みですが、SSR hydration、portal、virtualized list、component library、CSS-in-JSは対象アプリごとのruntime検証が必要です。
 - Microsoftのfont、icon、bitmap、wallpaper、sound等は同梱していません。
 
-実証範囲・未検証範囲は[Compatibility evidence](docs/compatibility.md)、v1実行済み検証は[Validation report](docs/validation-report.md)、v1 review判断の根拠は[Final validation report](docs/final-validation-report.md)、未公開CLI候補は[CLI + Skill validation report](docs/cli-validation-report.md)に分けて記録しています。完全な使用方法、troubleshooting、licenseは[英語README](README.md)を参照してください。
+実証範囲・未検証範囲は[Compatibility evidence](docs/compatibility.md)、v1実行済み検証は[Validation report](docs/validation-report.md)、v1.0.0 review判断の根拠は[Final validation report](docs/final-validation-report.md)、v1.1.0 CLI + Skillの根拠は[CLI + Skill validation report](docs/cli-validation-report.md)に分けて記録しています。完全な使用方法、troubleshooting、licenseは[英語README](README.md)を参照してください。

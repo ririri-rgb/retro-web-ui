@@ -1,8 +1,8 @@
 # Compatibility evidence
 
-Evidence date: 2026-08-27. This is the bounded compatibility evidence adopted for `v1.0.0`.
+Evidence date: 2026-08-27. This is the bounded compatibility evidence adopted for `v1.1.0`.
 
-The post-v1 CLI candidate reuses this semantic/runtime evidence rather than expanding it. Its additional deterministic evidence is recorded in [CLI + Skill validation report](cli-validation-report.md): six local fixtures exercised manifest/baseline/verify flow, the pinned TodoMVC repository exercised real monorepo app selection and unchanged behavior comparison, and package-manager support remains separated into runtime, historical, or synthetic levels.
+The v1.1 CLI reuses the v1.0 semantic/runtime evidence rather than expanding it. Its additional deterministic evidence is recorded in [CLI + Skill validation report](cli-validation-report.md): six local fixtures exercised manifest/baseline/verify flow, the pinned TodoMVC repository exercised real monorepo app selection and unchanged behavior comparison, and package-manager support remains separated into runtime, historical, or synthetic levels.
 
 Evidence levels used below are cumulative only when explicitly listed: **Detection**, **Build**, **Runtime**, **Behavior**, **Visual**, **Semantic conversion**, and **Real OSS**. A dependency being detected is never treated as runtime support.
 

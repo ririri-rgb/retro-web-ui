@@ -4,7 +4,7 @@ Date: 2026-08-27
 
 Baseline: immutable public `v1.0.0` tag at `14c365b3f3132dc0898b417447108cc417c22c53`
 
-Candidate source version: `1.1.0.dev0` (not released)
+Release source version: `1.1.0`
 
 ## Architecture result
 
@@ -31,7 +31,7 @@ All JSON commands emit one envelope at schema version 1. Exit codes are `0` comp
 - Python unit suite: 47 tests after CLI, monorepo, package-manager metadata, output safety, symlink-scope, manifest mismatch, and packaging assertions were added; the previous 32 v1 tests remain present.
 - Python 3.10 isolated-venv pass: unit suite and repository Skill validator passed. CI retains the Python 3.9 minimum job and adds CLI packaging jobs on Linux, macOS, and Windows with Python 3.12.
 - Repository validator and official Skill Creator validator: passed.
-- Pushed candidate CI: implementation commit `ce70477` passed Python 3.9 minimum validation, the full Linux fixture/browser job, and reproducible packaging/clean-install jobs on Linux, macOS, and Windows with Python 3.12 ([run 33068776964](https://github.com/ririri-rgb/retro-web-ui/actions/runs/33068776964)).
+- Pushed candidate CI: final reviewed implementation commit `b0c9107` passed Python 3.9 minimum validation, the full Linux fixture/browser job, and reproducible packaging/clean-install jobs on Linux, macOS, and Windows with Python 3.12 ([run 33069368303](https://github.com/ririri-rgb/retro-web-ui/actions/runs/33069368303)).
 - Five locked production fixture builds: React/Vite, React/MUI/Emotion, Vue/Bootstrap, SvelteKit adapter-static, and Next App Router passed; Next remained request-time SSR.
 - Production npm audit: zero vulnerabilities. The full development-tree audit reports low-severity `GHSA-pxg6-pf52-xh8x` through SvelteKit's `cookie@0.6.0`; npm's offered fix is a breaking SvelteKit downgrade, and the dependency is absent from every released CLI/Skill artifact.
 - Browser gates: showcase and React interaction passed; MUI portal, Bootstrap lifecycle, Svelte hydration, Next initial SSR/hydration, external CDP interaction, Escape/focus behavior, and browser warning/error checks passed.
@@ -59,7 +59,7 @@ This rerun validates the new deterministic CLI boundary against the same real ta
 
 The installed CLI has zero third-party runtime dependencies. `setuptools` and `build` are release-only tooling. The wheel contains the MIT license, Skill manifest/instructions, original CSS-only theme assets, references, and shared Python modules; it contains no fixture dependency graph, browser, proprietary Windows asset, credential, or local checkout path. The source distribution excludes tests and fixture content. Standalone Skill ZIP packaging remains independently reproducible.
 
-The repository's locked browser/framework harness has one known low-severity development-only advisory (`GHSA-pxg6-pf52-xh8x`, `cookie@0.6.0` through `@sveltejs/kit@2.70.3`). A forced npm remediation would downgrade SvelteKit incompatibly, so the candidate records the issue instead of applying an unverified lockfile override. Production audit remains clean and none of this dependency graph is packaged.
+The repository's locked browser/framework harness has one known low-severity development-only advisory (`GHSA-pxg6-pf52-xh8x`, `cookie@0.6.0` through `@sveltejs/kit@2.70.3`). A forced npm remediation would downgrade SvelteKit incompatibly, so the release records the issue instead of applying an unverified lockfile override. Production audit remains clean and none of this dependency graph is packaged.
 
 ## Performance and agent experience
 
@@ -79,4 +79,4 @@ No cache was added: current fixtures and the real TodoMVC target complete quickl
 
 The future GUI can call the shared Python facade or the CLI JSON API for analysis, diagnostics, behavior artifacts, themes, and verification. The GUI must still present app selection, explicit artifact writes, review-required states, and user-authorized target commands; it must not label static evidence as conversion success. Semantic edits and visual judgment still require the Skill/agent unless a future bounded adapter is separately proven.
 
-The architecture is backward-compatible and adds a substantial new interface without removing the v1 Skill workflow, so the appropriate release line is a **minor release**, proposed as `v1.1.0`, rather than a major version. Promote `1.1.0.dev0` to `1.1.0`, create the tag and GitHub Release only after review of this report and successful pushed CI.
+The architecture is backward-compatible and adds a substantial new interface without removing the v1 Skill workflow, so the approved release line is the minor release `v1.1.0`, rather than a major version. The report was reviewed, the source version was promoted to `1.1.0`, and publication remains gated by the release commit CI, tag/version check, reproducible packages, and GitHub Release verification.

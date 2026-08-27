@@ -56,20 +56,20 @@ A second real-OSS case records a 2026-08-27 manual conversion of the authenticat
 Ask Codex's `$skill-installer` to install the versioned Skill directory from GitHub:
 
 ```text
-$skill-installer install https://github.com/ririri-rgb/retro-web-ui/tree/v1.0.0/skills/retro-web-ui
+$skill-installer install https://github.com/ririri-rgb/retro-web-ui/tree/v1.1.0/skills/retro-web-ui
 ```
 
 Or clone the tagged release and copy the Skill into the current user location:
 
 ```bash
-git clone --branch v1.0.0 --depth 1 https://github.com/ririri-rgb/retro-web-ui.git
+git clone --branch v1.1.0 --depth 1 https://github.com/ririri-rgb/retro-web-ui.git
 mkdir -p "$HOME/.agents/skills"
 cp -R retro-web-ui/skills/retro-web-ui "$HOME/.agents/skills/"
 ```
 
 For a repository-scoped installation, copy it to the repository's `.agents/skills/retro-web-ui/` directory. Codex also follows symlinked Skill folders. Restart or reload the Codex session if an update does not appear. The core Skill and helper scripts require Python 3.9+ and no third-party Python packages. Visual verification requires an installed Chrome/Chromium-compatible browser only when screenshots are requested. The repository's cross-framework regression harness additionally requires Node.js 22+ for its dependency-free external browser driver.
 
-Version `1.0.0` remains the latest stable standalone Skill release. The current unreleased `1.1.0.dev0` source adds an installable CLI while retaining the standalone Skill layout and legacy helper entry points.
+Version `1.1.0` is the current stable CLI + Skill release. It retains the standalone Skill layout and the `v1.0.0` legacy helper entry points while adding the installable deterministic CLI.
 
 ### Install the CLI from a checkout
 
@@ -160,7 +160,7 @@ Claims below reflect tests in this repository, not theoretical support.
 | `naive-ui-admin` real OSS login | pinned MIT checkout, build, Naive UI/Pinia/router flow, real demo login, route/theme cleanup, normal/narrow visual review | Dated manual authentication-surface record; not CI, dashboard not converted |
 | Nuxt, Angular, Astro, other CSS-in-JS and complex libraries | detector or documented scoped fallback only | Best-effort until tested in the target project |
 
-See [Compatibility evidence](docs/compatibility.md) for exact coverage, the [v1 Validation report](docs/validation-report.md), the [Final validation report](docs/final-validation-report.md) supporting v1.0.0, and the [CLI + Skill validation report](docs/cli-validation-report.md) for the unreleased architecture candidate.
+See [Compatibility evidence](docs/compatibility.md) for exact coverage, the [v1 Validation report](docs/validation-report.md), the [Final validation report](docs/final-validation-report.md) supporting v1.0.0, and the [CLI + Skill validation report](docs/cli-validation-report.md) supporting v1.1.0.
 
 ## Known limitations and unsupported cases
 

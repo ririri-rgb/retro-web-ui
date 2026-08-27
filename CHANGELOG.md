@@ -4,6 +4,8 @@ All notable changes follow [Keep a Changelog](https://keepachangelog.com/en/1.1.
 
 ## [Unreleased]
 
+## [1.1.0] - 2026-08-27
+
 ### Added
 
 - Installable `retro-web-ui` Python CLI with versioned JSON output for project analysis, environment diagnostics, behavior snapshots/comparison, theme assets, static audit, and read-only verification aggregation.
