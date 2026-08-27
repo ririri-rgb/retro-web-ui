@@ -31,8 +31,9 @@ All JSON commands emit one envelope at schema version 1. Exit codes are `0` comp
 - Python unit suite: 47 tests after CLI, monorepo, package-manager metadata, output safety, symlink-scope, manifest mismatch, and packaging assertions were added; the previous 32 v1 tests remain present.
 - Python 3.10 isolated-venv pass: unit suite and repository Skill validator passed. CI retains the Python 3.9 minimum job and adds CLI packaging jobs on Linux, macOS, and Windows with Python 3.12.
 - Repository validator and official Skill Creator validator: passed.
+- Pushed candidate CI: implementation commit `ce70477` passed Python 3.9 minimum validation, the full Linux fixture/browser job, and reproducible packaging/clean-install jobs on Linux, macOS, and Windows with Python 3.12 ([run 33068776964](https://github.com/ririri-rgb/retro-web-ui/actions/runs/33068776964)).
 - Five locked production fixture builds: React/Vite, React/MUI/Emotion, Vue/Bootstrap, SvelteKit adapter-static, and Next App Router passed; Next remained request-time SSR.
-- Production npm audit: zero vulnerabilities.
+- Production npm audit: zero vulnerabilities. The full development-tree audit reports low-severity `GHSA-pxg6-pf52-xh8x` through SvelteKit's `cookie@0.6.0`; npm's offered fix is a breaking SvelteKit downgrade, and the dependency is absent from every released CLI/Skill artifact.
 - Browser gates: showcase and React interaction passed; MUI portal, Bootstrap lifecycle, Svelte hydration, Next initial SSR/hydration, external CDP interaction, Escape/focus behavior, and browser warning/error checks passed.
 - CLI workflow across six converted fixtures: static HTML, React, MUI, Vue, SvelteKit, and Next produced compatible manifests, explicit baselines, unchanged behavior comparison, and structured verification. Vue and Next correctly retained static review findings for intentionally present upstream utility/class collision probes; runtime gates supplied the required review evidence rather than suppressing the warnings.
 - Python wheel and sdist: two independent builds were byte-identical after deterministic tar/gzip metadata normalization. A new temporary venv installed the wheel offline with `--no-deps`; the console entry point, manifest check, static-app analysis, and `retro_web_ui.core` import passed.
@@ -58,6 +59,8 @@ This rerun validates the new deterministic CLI boundary against the same real ta
 
 The installed CLI has zero third-party runtime dependencies. `setuptools` and `build` are release-only tooling. The wheel contains the MIT license, Skill manifest/instructions, original CSS-only theme assets, references, and shared Python modules; it contains no fixture dependency graph, browser, proprietary Windows asset, credential, or local checkout path. The source distribution excludes tests and fixture content. Standalone Skill ZIP packaging remains independently reproducible.
 
+The repository's locked browser/framework harness has one known low-severity development-only advisory (`GHSA-pxg6-pf52-xh8x`, `cookie@0.6.0` through `@sveltejs/kit@2.70.3`). A forced npm remediation would downgrade SvelteKit incompatibly, so the candidate records the issue instead of applying an unverified lockfile override. Production audit remains clean and none of this dependency graph is packaged.
+
 ## Performance and agent experience
 
 One `analyze` result now supplies app candidates, framework/rendering/style evidence, warnings, and executable argv instead of requiring the agent to rediscover each item. One `verify` call combines contract, Git/environment, static audit, and behavior comparison without rescanning the project or running commands. JSON diagnostics include stable codes and next-action hints, and ambiguous monorepos stop with `APP_SELECTION_REQUIRED` rather than producing a confident mixed-app plan.
@@ -70,7 +73,7 @@ No cache was added: current fixtures and the real TodoMVC target complete quickl
 - Target-native build/test/runtime commands are suggested but not executed. This is a deliberate safety boundary, not a missing automatic conversion feature.
 - Semantic conversion, visual quality, accessibility, and application-specific portal/SSR/CSS repair remain best-effort Skill work.
 - npm is exercised in current fixtures and TodoMVC; pnpm is backed by the v1 naive-ui-admin record plus synthetic metadata coverage, yarn by mixed-workspace tests, and Bun by detection/argv tests only. The CLI does not install any package manager.
-- Local clean packaging is validated on macOS/Python 3.14 and the core suite on Python 3.10. Cross-platform CI is configured for Linux/macOS/Windows Python 3.12; its authoritative result belongs to the pushed candidate commit.
+- Local clean packaging is validated on macOS/Python 3.14 and the core suite on Python 3.10. The pushed candidate passed Linux/macOS/Windows packaging and clean-install jobs on Python 3.12 plus the Python 3.9 minimum job.
 
 ## GUI readiness and release recommendation
 

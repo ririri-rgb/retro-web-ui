@@ -194,6 +194,8 @@ npm audit --omit=dev --audit-level=moderate
 
 The Python unit/Skill helpers have no third-party runtime dependency. `npm ci` installs only the locked framework validation harness. The runtime smoke combines in-app assertions with an external dependency-free Chrome DevTools Protocol driver and fails on browser warnings/errors. CI generates and uploads current browser renders for review. Generate the seven showcase screenshots locally when shared theme CSS changes:
 
+`npm audit --omit=dev --audit-level=moderate` reports zero production vulnerabilities. The full development-tree audit currently reports low-severity [GHSA-pxg6-pf52-xh8x](https://github.com/advisories/GHSA-pxg6-pf52-xh8x) through SvelteKit's `cookie@0.6.0`; npm offers no non-breaking resolution for the locked SvelteKit line. This fixture-only dependency is not included in the Skill ZIP, wheel, or source distribution.
+
 ```bash
 .venv/bin/python tests/visual_smoke.py
 ```
