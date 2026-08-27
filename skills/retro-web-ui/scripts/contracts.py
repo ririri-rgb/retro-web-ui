@@ -59,4 +59,3 @@ def envelope(
         "diagnostics": list(diagnostics),
         "meta": meta,
     }
-

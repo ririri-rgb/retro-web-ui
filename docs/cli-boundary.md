@@ -37,4 +37,3 @@ The CLI JSON envelope, Skill manifest, behavior snapshot schema, signal algorith
 - Multiple detected frontend applications require `--app`; the CLI does not guess.
 - Static warnings are evidence for review, not proof of failure or success.
 - The Skill invokes the bundled CLI path and checks its manifest before conversion instead of silently trusting an unrelated executable on `PATH`.
-

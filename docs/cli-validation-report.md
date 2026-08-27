@@ -1,7 +1,9 @@
 # CLI + Skill validation report
 
-Date: 2026-08-27  
-Baseline: immutable public `v1.0.0` tag at `14c365b3f3132dc0898b417447108cc417c22c53`  
+Date: 2026-08-27
+
+Baseline: immutable public `v1.0.0` tag at `14c365b3f3132dc0898b417447108cc417c22c53`
+
 Candidate source version: `1.1.0.dev0` (not released)
 
 ## Architecture result

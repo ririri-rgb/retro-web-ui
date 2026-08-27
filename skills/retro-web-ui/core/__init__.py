@@ -6,4 +6,3 @@ from ..scripts.bundle_theme import THEMES, build
 from ..scripts.inspect_project import detect
 
 __all__ = ["SIGNAL_ALGORITHM", "THEMES", "audit", "build", "compare", "detect", "snapshot"]
-
