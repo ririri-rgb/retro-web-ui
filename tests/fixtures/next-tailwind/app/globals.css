@@ -1,0 +1,13 @@
+@import "tailwindcss";
+@import "../../../../skills/retro-web-ui/assets/theme-kit/retro-base.css";
+@import "../../../../skills/retro-web-ui/assets/theme-kit/windows-7.css";
+
+html, body { min-height: 100%; margin: 0; }
+.fixture-workspace { display: grid; min-height: 100vh; place-items: start center; padding-top: 30px; }
+.fixture-window { width: min(660px, calc(100vw - 16px)); }
+.fixture-status { margin: 0; }
+[data-retro-theme="windows-7"] :where(.fixture-modern-card, .fixture-dialog-content) { border-radius: var(--retro-window-radius); padding: var(--retro-panel-gap); box-shadow: none; }
+.fixture-dialog-overlay { position: fixed; inset: 0; background: rgb(20 45 64 / .35); }
+.fixture-dialog-content { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 2; }
+
+@media (max-width: 640px) { .fixture-workspace { padding-top: 4px; } }

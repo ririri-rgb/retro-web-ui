@@ -27,7 +27,8 @@ jobs:
           npm audit --omit=dev --audit-level=moderate
           python scripts/quick_validate_compat.py skills/retro-web-ui
           python -m unittest discover -s tests -v
-          python tests/visual_smoke.py --check-only --browser /usr/bin/google-chrome
+          python tests/visual_smoke.py --browser /usr/bin/google-chrome --output "$RUNNER_TEMP/retro-showcase"
+          python tests/runtime_smoke.py --browser /usr/bin/google-chrome --output "$RUNNER_TEMP/retro-runtime"
           git diff --check
           test -z "$(git status --porcelain --untracked-files=all)"
       - name: Check tag matches VERSION

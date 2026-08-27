@@ -1,30 +1,50 @@
 # Compatibility evidence
 
-Evidence date: 2026-08-26.
+Evidence date: 2026-08-27.
 
-| Target | Fixture/evidence | Checks passed | Boundary |
+Evidence levels used below are cumulative only when explicitly listed: **Detection**, **Build**, **Runtime**, **Behavior**, **Visual**, **Semantic conversion**, and **Real OSS**. A dependency being detected is never treated as runtime support.
+
+| Target | Rendering / styling / architecture | Evidence reached | Verified boundary |
 | --- | --- | --- | --- |
-| Static HTML + Vanilla JS | `tests/fixtures/static-html`, browser showcase | detection, hashed behavior signals, CSS-only comparison, click/form/tab keyboard smoke, five renders | strongest current evidence |
-| TodoMVC Vanilla ES6 real OSS | `tastejs/todomvc@ff43b02e59dfa604386bb382034b2cd07c2bcd8a` | semantic Windows 98 conversion, original/themed build, identical JS bundle, behavior compare unchanged, active/completed route state, Chrome screenshot | add/toggle baseline failed before theming; external source is not vendored |
-| React 19 + Vite 8 + Tailwind 4 | `tests/fixtures/react-vite` | semantic Japanese freeware conversion, locked production build, unchanged state/handler signals, real Chrome click/status transition, screenshot | fixture is intentionally small; Tailwind dependency is detection evidence and not used by the rendered control |
-| Vue 3 + Vite 8 + Bootstrap 5 | `tests/fixtures/vue-vite` and Bootstrap binding fixture | locked production build, model/form signals, `data-bs-*` risk | plugin runtime unverified |
-| SvelteKit 2 + Svelte 5 | `tests/fixtures/svelte-kit` | locked static-adapter build, extension, binding and command detection | SSR/hydration beyond prerender unverified |
-| Next 16 App Router + Tailwind 4 + Radix-style | `tests/fixtures/next-tailwind` | locked static build, styling/provider, form-contract detection | portals/server boundaries unverified |
-| Four theme bundles | same showcase DOM/JS | deterministic generation, unique structural selectors/tokens, Chrome render | not evidence for every target CSS stack |
+| Static HTML + Vanilla JS | browser DOM; plain CSS; native controls | Detection, Behavior, Runtime, Visual, Semantic conversion | hashed pre/post signals, click/form/tab keyboard smoke, modern plus four theme renders; strongest generic fallback evidence |
+| TodoMVC Vanilla ES6 real OSS | client rendering; dependency CSS; hash routes | Build, Behavior, Runtime, Visual, Semantic conversion, Real OSS | pinned `tastejs/todomvc@ff43b02e...`; generated JS byte-identical, active/completed route state preserved, Windows 98 screenshot; upstream add/toggle baseline defect remained before conversion |
+| React 19 + Vite 8 | client rendering; Tailwind detected; controlled state | Build, Behavior, Runtime, Visual, Semantic conversion | Japanese freeware conversion, unchanged state/handler signals, real click changed `aria-pressed`, label, and live status; small fixture, not broad React proof |
+| React 19 + MUI 9 + Emotion | client rendering; CSS-in-JS; controlled input; portal dialog | Detection, Build, Runtime, Behavior, Visual, Semantic conversion | Windows 98 component overrides, controlled value, dialog portal, Escape, focus return, final DOM attributes and computed radius; one fixture and selected MUI controls only |
+| Vue 3 + Vite 8 + Bootstrap 5 | client rendering; SFC/scoped CSS; actual Bootstrap JS modal; `v-model` | Detection, Build, Runtime, Behavior, Visual, Semantic conversion | Windows XP settings UI, native validation, submit/live status, Bootstrap shown/hidden events, utility-specificity adapter and computed style |
+| SvelteKit 2 + Svelte 5 | adapter-static prerender followed by hydration; global theme import; `bind:*` | Detection, Build, Runtime, Behavior, Visual, Semantic conversion | Japanese freeware backup settings, controlled values/check, form/live status, hydrated production output; request-time SvelteKit SSR not tested |
+| Next 16 App Router + Tailwind 4 + Radix Dialog | request-time SSR; stable server theme root; client island/hydration; portal; utility CSS | Detection, Build, Runtime, Behavior, Visual, Semantic conversion | Windows 7 settings, initial server HTML, hydration without mismatch, controlled form/live status, Escape/focus return, portal scope, Tailwind collision adapter, desktop/dialog/narrow captures |
+| naive-ui-admin real OSS authentication surface | Vue 3/Vite; Naive UI; Pinia/router; scoped Less; async routes; partial-surface portal scope | Detection, Build, Runtime, Behavior, Visual, Semantic conversion, Real OSS (manual record) | pinned MIT checkout; demo login routed to dashboard, no console errors, body theme removed after route, Japanese freeware desktop/narrow inspection; dashboard itself not converted and the record is not rerun in CI |
+| Four theme bundles | same showcase DOM/JS; CSS-only theme primitives | Build, Runtime, Visual | deterministic generation, unique structural selectors/tokens, interaction smoke and all-theme render; not evidence for every target CSS stack |
 
-The browser smoke test found a real shared-CSS regression: `.retro-stack { display: grid }` overrode a tab panel's `hidden` attribute. The common kit was corrected to preserve `[hidden]`, then every theme and the interaction test were rerun. This is retained as a regression assertion.
+## Coverage by validation axis
 
-Real OSS validation results are appended only after a pinned commit, license, commands, and observed result are recorded. Compatibility is not inferred merely from a dependency name.
+- Framework/runtime: static/vanilla, React, Vue, SvelteKit, and Next.js have runtime semantic-conversion evidence.
+- Rendering models: client rendering, static prerender plus hydration, request-time SSR plus hydration, route-driven UI, and client islands are exercised.
+- Styling: plain CSS, global/scoped CSS, Tailwind utilities, Bootstrap utilities/plugins, and Emotion CSS-in-JS are exercised. Sass/CSS Modules are detected but do not yet have equivalent runtime semantic-conversion evidence.
+- Components: native controls, controlled inputs, Bootstrap modal, MUI dialog portal, Radix dialog portal, and Naive UI form controls are exercised.
+- Application classes: showcase/settings, authentication, backup utility, Todo, and settings/dialog surfaces are represented. Virtualized/table-heavy and visualization-heavy screens remain weak.
+- Real OSS: TodoMVC and the naive-ui-admin authentication surface are pinned, licensed, non-vendored cases with separate evidence records. The naive-ui-admin conversion is explicitly a dated manual record rather than a CI fixture.
 
-Detailed TodoMVC evidence is in [real-oss-todomvc.md](real-oss-todomvc.md). A namespaced bundle alone changed an input edge but left the 80 px heading, Helvetica, shadow, and application structure modern. The subsequent semantic conversion passed build, behavior-signal, generated-JavaScript, route, and visual checks. Its first screenshot still exposed a dependency-owned fixed input height, which was corrected with a scoped adapter and rerun. This validates the Skill's requirement for semantic markup changes, computed-style inspection, and failure-driven iteration; `audit_ui.py: clean` is never treated as visual success.
+## Failure-driven evidence
 
-## Conditional support
+The browser smoke suite originally found `.retro-stack { display: grid }` overriding a tab panel's `hidden` attribute. The shared kit now preserves `[hidden]`, and all four themes plus interactions are regression-tested.
 
-- React, Vue, and Svelte family applications with source templates are expected to work through scoped integration and context-aware edits, subject to target-native tests.
-- Tailwind, Bootstrap, MUI, Vuetify, Radix/shadcn, and CSS-in-JS require provider/layer/specificity handling.
-- SSR/meta-frameworks require stable root attributes and hydration checks.
-- Monorepos must be analyzed per workspace.
+TodoMVC showed that a namespaced bundle alone can leave a modern application structure and dependency-owned fixed dimensions. A semantic conversion and narrow targeted adapter were required even though the static audit was clean.
+
+Bootstrap showed that later source order does not beat an upstream `!important` utility. The fixture uses the narrowest theme-scoped adapter and validates the computed style. MUI 9 showed that deprecated passthrough props can land DOM/test attributes on the wrong slot, so the fixture uses current `slotProps` and checks the final DOM. Naive UI showed that a global body theme can leak from a partially converted route; portal-host theme mirroring is now lifecycle-scoped and route-cleanup is verified.
+
+Detailed real-OSS records:
+
+- [TodoMVC](real-oss-todomvc.md)
+- [naive-ui-admin authentication surface](real-oss-naive-ui-admin.md)
+
+## Conditional / best-effort
+
+- Nuxt, Angular, Astro, CSS Modules, Sass, styled-components, complex uncontrolled custom selects, virtualized data grids, and chart-heavy dashboards have detection or written integration guidance but not the same runtime semantic-conversion evidence.
+- Other versions and components of Bootstrap, MUI, Radix/shadcn, and Naive UI can differ in DOM, slots, CSS specificity, and portal behavior. Use the target's own runtime tests and computed-style inspection.
+- Full-application conversion of a large mixed-style repository remains an iterative, surface-by-surface task; evidence for one route must not be generalized to untouched routes.
+- SSR/meta-framework conversions must preserve the target's server/client boundary and verify initial HTML plus hydration. Next request-time SSR is exercised; Nuxt SSR and SvelteKit request-time SSR are not.
 
 ## Safely unsupported
 
-Closed Shadow DOM, canvas/WebGL-only rendering, cross-origin iframes, binary/generated bundles without source, and native desktop applications cannot be reliably transformed without expanding beyond this Skill's safe source-editing model.
+Closed Shadow DOM, canvas/WebGL-only rendering, cross-origin iframe contents, binary/generated bundles without source, and native desktop applications cannot be reliably transformed without expanding beyond this Skill's safe source-editing model. Cross-origin or production-only authentication flows also cannot be exercised without user-provided authorization and a safe test environment.

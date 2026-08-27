@@ -38,8 +38,18 @@ jobs:
         run: python -m unittest discover -s tests -v
       - name: Validate Skill format
         run: python scripts/quick_validate_compat.py skills/retro-web-ui
-      - name: Browser interaction smoke
-        run: python tests/visual_smoke.py --check-only --browser /usr/bin/google-chrome
+      - name: Browser interaction and render smoke
+        run: |
+          python tests/visual_smoke.py --browser /usr/bin/google-chrome --output "$RUNNER_TEMP/retro-showcase"
+          python tests/runtime_smoke.py --browser /usr/bin/google-chrome --output "$RUNNER_TEMP/retro-runtime"
+      - name: Upload browser renders for review
+        uses: actions/upload-artifact@v4
+        with:
+          name: browser-renders
+          path: |
+            ${{ runner.temp }}/retro-showcase/*.png
+            ${{ runner.temp }}/retro-runtime/*.png
+          if-no-files-found: error
       - name: Diff hygiene
         run: |
           git diff --check

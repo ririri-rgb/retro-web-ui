@@ -4,14 +4,15 @@
   "private": true,
   "workspaces": [
     "tests/fixtures/react-vite",
+    "tests/fixtures/react-mui",
     "tests/fixtures/vue-vite",
     "tests/fixtures/svelte-kit",
     "tests/fixtures/next-tailwind"
   ],
   "scripts": {
-    "build:fixtures": "npm run build --workspace react-fixture && npm run build --workspace vue-fixture && npm run build --workspace svelte-fixture && npm run build --workspace next-fixture"
+    "build:fixtures": "npm run build --workspace react-fixture && npm run build --workspace react-mui-fixture && npm run build --workspace vue-fixture && npm run build --workspace svelte-fixture && npm run build --workspace next-fixture"
   },
   "engines": {
-    "node": ">=20.19.0"
+    "node": ">=22.0.0"
   }
 }

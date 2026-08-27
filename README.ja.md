@@ -4,7 +4,9 @@
 
 既存Webアプリの機能を維持しながら、UIを Windows 98 / Windows XP / Windows 7 / 2000年代の日本製Windowsフリーソフト風へ変換するCodex Skillです。単なる配色変更ではなく、card→group box、toggle→checkbox、settings sidebar→property sheet等を意味に応じて再構成します。
 
-変換前と4テーマの実描画結果は[英語README](README.md)冒頭で比較できます。5枚は同一HTML・同一JavaScriptを使っています。さらに、pinned TodoMVCのWindows 98 semantic変換と、React/Vite fixtureの日本製フリーソフト風変換をproduction build・behavior signal・実ブラウザ操作・screenshotで検証しています。
+変換前と4テーマの実描画結果は[英語README](README.md)冒頭で比較できます。5枚は同一HTML・同一JavaScriptを使っています。さらに、pinned TodoMVC、React/Vite、React/MUI/Emotion、Vue/Bootstrap、SvelteKit、Next App Router/Radix/Tailwind、およびpinned `naive-ui-admin`のlogin surfaceで、範囲を区別しながらsemantic変換を検証しています。
+
+現在のmainでは、client rendering、static prerender後のhydration、request-time SSR後のhydration、controlled form、library modal/dialog、body portal、Escape、focus return、routing、live region、desktop/narrow screenshotまで実ブラウザで確認します。これは各ecosystem全体への対応保証ではなく、実証したfixture/surfaceの境界を[Compatibility evidence](docs/compatibility.md)へ明記しています。
 
 ## インストール
 
@@ -22,7 +24,7 @@ mkdir -p "$HOME/.agents/skills"
 cp -R retro-web-ui/skills/retro-web-ui "$HOME/.agents/skills/"
 ```
 
-リポジトリ限定で使う場合は `.agents/skills/retro-web-ui/` へコピーします。Skill本体とhelperはPython 3.9以上だけで動作し、第三者Python packageは不要です。repositoryの検証は `python3 -m venv .venv` で作成した仮想環境から実行します。framework regression harnessはNode.js 20.19以上も使用します。`v0.1.0`はstandalone Skillとして公開し、universal Plugins Directory向けpackage化は今回のrelease stabilization scopeには含めません。
+リポジトリ限定で使う場合は `.agents/skills/retro-web-ui/` へコピーします。Skill本体とhelperはPython 3.9以上だけで動作し、第三者Python packageは不要です。repositoryの検証は `python3 -m venv .venv` で作成した仮想環境から実行します。framework regression harnessは、dependency-free external browser driverのためNode.js 22以上も使用します。`v0.1.0`はstandalone Skillとして公開し、universal Plugins Directory向けpackage化は今回のrelease stabilization scopeには含めません。
 
 ```bash
 python3 -m venv .venv
@@ -31,6 +33,7 @@ npm run build:fixtures
 npm audit --omit=dev --audit-level=moderate
 .venv/bin/python -m unittest discover -s tests -v
 .venv/bin/python tests/visual_smoke.py --check-only
+.venv/bin/python tests/runtime_smoke.py --check-only
 ```
 
 ## 利用例
@@ -49,7 +52,7 @@ Skillは対象repositoryを検出し、behavior signalのhash baselineを取り�
 
 - 全Webアプリの完全自動変換を主張しません。意味を伴う構造変換はCodexが対象コードを読んで行います。
 - closed Shadow DOM、Canvas/WebGLのみのUI、cross-origin iframe、sourceのない生成bundleは安全な変換対象外です。
-- SSR hydration、portal、virtualized list、component library、CSS-in-JSは個別のruntime検証が必要です。
+- Next/Radix、MUI/Emotion、Bootstrap、Naive UIの代表ケースは検証済みですが、SSR hydration、portal、virtualized list、component library、CSS-in-JSは対象アプリごとのruntime検証が必要です。
 - Microsoftのfont、icon、bitmap、wallpaper、sound等は同梱していません。
 
-実証範囲・未検証範囲は[Compatibility evidence](docs/compatibility.md)、実行済み検証は[Validation report](docs/validation-report.md)に分けて記録しています。完全な使用方法、troubleshooting、licenseは[英語README](README.md)を参照してください。
+実証範囲・未検証範囲は[Compatibility evidence](docs/compatibility.md)、実行済み検証は[Validation report](docs/validation-report.md)、v1 review判断の根拠は[Final validation report](docs/final-validation-report.md)に分けて記録しています。完全な使用方法、troubleshooting、licenseは[英語README](README.md)を参照してください。

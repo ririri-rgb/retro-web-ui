@@ -1,0 +1,1 @@
+{"name":"react-mui-fixture","private":true,"version":"0.0.0","type":"module","scripts":{"build":"vite build"},"dependencies":{"@emotion/react":"11.14.0","@emotion/styled":"11.14.1","@mui/material":"9.3.1","react":"19.2.8","react-dom":"19.2.8"},"devDependencies":{"vite":"8.2.2"}}

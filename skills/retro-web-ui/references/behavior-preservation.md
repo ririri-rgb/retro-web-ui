@@ -26,4 +26,6 @@ Assume these are behavior, even when embedded in a UI component: network request
 4. Compare the hashed guard output and inspect every changed file manually.
 5. Verify observable behavior. Passing builds alone are insufficient.
 
-`behavior_guard.py` records hashes and counts, never source excerpts. It can detect removed or moved signals but cannot prove runtime equivalence, distinguish every alias, or understand dynamic code.
+`behavior_guard.py` records hashes and counts, never source excerpts. The current signal-expression algorithm covers multiline React/JSX, Vue, Svelte/Svelte 5, Angular, inline/property/listener event syntax; route/history calls; common state setters and aliases; form/framework bindings; timers/subscriptions; ARIA contracts; and test selectors. It rejects baselines produced by an older algorithm version.
+
+It can detect removed or changed local signals but cannot prove runtime equivalence, resolve every dynamic alias, understand arbitrary handler bodies, or observe runtime-only/generated wiring. Added accessibility or form signals may be intentional improvements and still require review. A browser check of the touched critical path remains mandatory.

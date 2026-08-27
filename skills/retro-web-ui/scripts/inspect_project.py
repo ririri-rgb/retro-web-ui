@@ -6,6 +6,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import re
 from pathlib import Path
 from typing import Any, Iterable, Optional
 
@@ -38,6 +39,9 @@ STYLING = {
     "radix-shadcn": {"@radix-ui/react-dialog", "@radix-ui/react-tabs", "shadcn"},
     "styled-components": {"styled-components"},
     "emotion": {"@emotion/react", "@emotion/styled"},
+    "naive-ui": {"naive-ui"},
+    "vuestic": {"vuestic-ui"},
+    "element-plus": {"element-plus"},
 }
 SOURCE_EXTENSIONS = {".html", ".htm", ".js", ".mjs", ".cjs", ".ts", ".jsx", ".tsx", ".vue", ".svelte", ".astro", ".css", ".scss", ".sass", ".less"}
 
@@ -158,6 +162,30 @@ def detect(root: Path) -> dict[str, Any]:
         framework_results.append({"name": "static-html-or-vanilla", "confidence": 0.7, "evidence": [f"html:{static_html[0]}"]})
 
     risks = []
+    rendering_evidence: dict[str, list[str]] = {}
+    architecture_evidence: dict[str, list[str]] = {}
+
+    def add_evidence(collection: dict[str, list[str]], name: str, evidence: str) -> None:
+        values = collection.setdefault(name, [])
+        if evidence not in values and len(values) < 8:
+            values.append(evidence)
+
+    virtual_dependencies = {
+        "@tanstack/react-virtual",
+        "react-window",
+        "react-virtualized",
+        "vue-virtual-scroller",
+        "svelte-virtual-list",
+    }
+    if combined_deps & virtual_dependencies:
+        for dependency in sorted(combined_deps & virtual_dependencies):
+            add_evidence(architecture_evidence, "virtualized-ui", f"dependency:{dependency}")
+    route_dependencies = {"react-router", "react-router-dom", "vue-router", "@angular/router"}
+    for dependency in sorted(combined_deps & route_dependencies):
+        add_evidence(architecture_evidence, "route-driven-ui", f"dependency:{dependency}")
+    portal_dependencies = {"@radix-ui/react-dialog", "@radix-ui/react-popover", "@mui/material", "naive-ui"}
+    for dependency in sorted(combined_deps & portal_dependencies):
+        add_evidence(architecture_evidence, "portals-or-overlays", f"dependency:{dependency}")
     risk_patterns = {
         "shadow-dom": ("attachShadow", "customElements.define"),
         "canvas-or-webgl": ("<canvas", "getContext(\"webgl", "getContext('webgl"),
@@ -172,6 +200,35 @@ def detect(root: Path) -> dict[str, Any]:
             text = path.read_text(encoding="utf-8", errors="ignore")
         except OSError:
             continue
+        path_evidence = f"file:{relative(path, root)}"
+        lower_name = path.name.lower()
+        if re.match(r".+\.module\.(?:css|scss|sass|less)$", lower_name):
+            if not any(item["name"] == "css-modules" for item in styling_results):
+                styling_results.append({"name": "css-modules", "evidence": [path_evidence]})
+        if path.suffix.lower() in {".scss", ".sass"} and not any(item["name"] == "sass" for item in styling_results):
+            styling_results.append({"name": "sass", "evidence": [path_evidence]})
+        if "<style scoped" in text and not any(item["name"] == "scoped-css" for item in styling_results):
+            styling_results.append({"name": "scoped-css", "evidence": [path_evidence]})
+
+        source_markers = {
+            "client-islands": ("'use client'", '"use client"'),
+            "request-time-ssr": ("force-dynamic", "getServerSideProps", "adapter-node"),
+            "static-generation-or-prerender": ("prerender = true", "adapter-static", "output: 'export'", 'output: "export"'),
+            "async-loaded-ui": ("React.lazy(", "defineAsyncComponent(", "import("),
+        }
+        for model, markers in source_markers.items():
+            if any(marker in text for marker in markers):
+                add_evidence(rendering_evidence, model, path_evidence)
+
+        architecture_markers = {
+            "portals-or-overlays": ("createPortal(", ".Portal", "<Teleport", "<Dialog", "data-bs-toggle=\"modal\""),
+            "controlled-or-two-way-binding": ("v-model", "bind:value", "bind:checked", "onChange=", "formControlName"),
+            "route-driven-ui": ("useRouter(", "useRoute(", "vue-router", "$page", "goto("),
+            "virtualized-ui": ("useVirtualizer(", "VirtualList", "virtual-scroll", "virtualized"),
+        }
+        for architecture, markers in architecture_markers.items():
+            if any(marker in text for marker in markers):
+                add_evidence(architecture_evidence, architecture, path_evidence)
         for risk, patterns in risk_patterns.items():
             if any(pattern in text for pattern in patterns):
                 item = next((entry for entry in risks if entry["name"] == risk), None)
@@ -188,12 +245,20 @@ def detect(root: Path) -> dict[str, Any]:
             break
 
     return {
-        "schema_version": 1,
+        "schema_version": 2,
         "root": str(root.resolve()),
         "package_manager": package_manager,
         "packages": packages,
         "frameworks": sorted(framework_results, key=lambda item: (-item["confidence"], item["name"])),
         "styling": sorted(styling_results, key=lambda item: item["name"]),
+        "rendering_models": [
+            {"name": name, "evidence": evidence}
+            for name, evidence in sorted(rendering_evidence.items())
+        ],
+        "component_architecture": [
+            {"name": name, "evidence": evidence}
+            for name, evidence in sorted(architecture_evidence.items())
+        ],
         "source_extensions": dict(sorted(extensions.items())),
         "verification_commands": commands,
         "risk_signals": sorted(risks, key=lambda item: item["name"]),
@@ -220,6 +285,8 @@ def main() -> int:
         print(f"package manager: {result['package_manager'] or 'not detected'}")
         print("frameworks: " + (", ".join(item["name"] for item in result["frameworks"]) or "not detected"))
         print("styling: " + (", ".join(item["name"] for item in result["styling"]) or "not detected"))
+        print("rendering: " + (", ".join(item["name"] for item in result["rendering_models"]) or "not detected"))
+        print("components: " + (", ".join(item["name"] for item in result["component_architecture"]) or "not detected"))
         print("verification: " + (", ".join(result["verification_commands"]) or "not declared"))
         print("risks: " + (", ".join(item["name"] for item in result["risk_signals"]) or "none detected"))
     return 0

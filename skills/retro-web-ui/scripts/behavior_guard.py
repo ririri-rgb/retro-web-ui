@@ -14,17 +14,84 @@ from typing import Iterable
 
 EXCLUDED = {".git", "node_modules", "dist", "build", ".next", ".nuxt", ".svelte-kit", "coverage", "vendor"}
 EXTENSIONS = {".html", ".htm", ".js", ".mjs", ".cjs", ".ts", ".jsx", ".tsx", ".vue", ".svelte", ".astro"}
+# Attribute values cover ordinary quoted HTML/template values and JSX/Svelte
+# braced expressions with one nested brace level. They intentionally stop well
+# before an entire source file can become one signal.
+_DOUBLE_QUOTED = r'"(?:\\.|[^"\\]){0,1200}"'
+_SINGLE_QUOTED = r"'(?:\\.|[^'\\]){0,1200}'"
+_BRACED = r"\{(?:[^{}\"']|" + _DOUBLE_QUOTED + "|" + _SINGLE_QUOTED + r"|\{[^{}]{0,800}\}){0,1600}\}"
+_UNQUOTED = r"[^\s>]{1,500}"
+_ATTRIBUTE_VALUE = rf"(?:{_BRACED}|{_DOUBLE_QUOTED}|{_SINGLE_QUOTED}|{_UNQUOTED})"
+_CALL = r"\((?:[^()\"']|" + _DOUBLE_QUOTED + "|" + _SINGLE_QUOTED + r"|\([^()]{0,800}\)){0,2000}\)"
+
 SIGNALS = {
-    "event-binding": re.compile(r"(?:(?:on[A-Z][A-Za-z]+|@[a-z][\w:-]*|v-on:[\w:-]+|on:[a-z][\w:-]*)\s*=\s*(?:\{[^}\n]{0,400}\}|[\"'][^\"'\n]{0,400}[\"'])|(?:addEventListener|removeEventListener)\s*\([^;\n]{0,500}\))"),
-    "network": re.compile(r"(?:\bfetch\s*\([^;\n]{0,700}\)|\baxios(?:\.[a-z]+)?\s*\([^;\n]{0,700}\)|\bXMLHttpRequest\b|\bWebSocket\s*\([^;\n]{0,400}\)|\bEventSource\s*\([^;\n]{0,400}\))"),
+    "event-binding": re.compile(
+        rf"(?:(?:on[A-Za-z][\w:-]*(?:\|[\w-]+)*|@[a-z][\w:-]*(?:\.[\w-]+)*|v-on:[\w:-]+(?:\.[\w-]+)*|on:[a-z][\w:-]*(?:\|[\w-]+)*|\([a-z][\w:-]*\))\s*=\s*{_ATTRIBUTE_VALUE}|(?:[A-Za-z_$][\w$]*(?:\.[A-Za-z_$][\w$]*)*)\.on[a-z]+\s*=\s*{_ATTRIBUTE_VALUE}|(?:addEventListener|removeEventListener)\s*{_CALL})",
+        re.I,
+    ),
+    "network": re.compile(rf"(?:\bfetch\s*{_CALL}|\baxios(?:\.[a-z]+)?\s*{_CALL}|\bXMLHttpRequest\b|\bWebSocket\s*{_CALL}|\bEventSource\s*{_CALL})", re.I),
     "auth": re.compile(r"(?:\bauth(?:enticate|orize)?\b|\bsignIn\b|\bsignOut\b|\blogin\b|\blogout\b|\bBearer\b|\bAuthorization\b)", re.I),
-    "routing": re.compile(r"(?:\buseRouter\s*\(\s*\)|\bnavigate\s*\([^;\n]{0,400}\)|\brouter\.(?:push|replace|go)\s*\([^;\n]{0,400}\)|\b(?:href|to|action)\s*=\s*(?:\{[^}\n]{0,400}\}|[\"'][^\"'\n]{0,400}[\"']))"),
-    "storage": re.compile(r"(?:(?:\blocalStorage|\bsessionStorage)(?:\.[A-Za-z]+\s*\([^;\n]{0,500}\))?|\bindexedDB(?:\.[A-Za-z]+\s*\([^;\n]{0,500}\))?|\bcaches\.(?:open|match)\s*\([^;\n]{0,500}\))"),
-    "state": re.compile(r"(?:\buseState\s*\([^;\n]{0,300}\)|\buseReducer\s*\([^;\n]{0,500}\)|\bcreateStore\s*\([^;\n]{0,500}\)|\bwritable\s*\([^;\n]{0,300}\)|\bref\s*\([^;\n]{0,300}\)|\breactive\s*\([^;\n]{0,500}\))"),
-    "form-contract": re.compile(r"(?:\b(?:name|type|method|pattern|formaction)\s*=\s*(?:\{[^}\n]{0,400}\}|[\"'][^\"'\n]{0,400}[\"'])|\brequired(?:\s*=\s*(?:\{[^}\n]{0,80}\}|[\"'][^\"'\n]{0,80}[\"']))?)", re.I),
-    "framework-binding": re.compile(r"(?:\b(?:v-model(?::[\w-]+)?|bind:[\w-]+|ngModel|formControlName|data-bs-(?:toggle|target|dismiss))\s*(?:=\s*(?:\{[^}\n]{0,400}\}|[\"'][^\"'\n]{0,400}[\"']))?)"),
+    "routing": re.compile(
+        rf"(?:\buseRouter\s*\(\s*\)|\bnavigate\s*{_CALL}|\brouter\.(?:push|replace|go)\s*{_CALL}|\bhistory\.(?:pushState|replaceState)\s*{_CALL}|\b(?:window\.)?location(?:\.href)?\s*=\s*(?:{_BRACED}|{_DOUBLE_QUOTED}|{_SINGLE_QUOTED})|\b(?:href|to|action)\s*=\s*{_ATTRIBUTE_VALUE})",
+        re.I,
+    ),
+    "storage": re.compile(rf"(?:(?:\blocalStorage|\bsessionStorage)(?:\.[A-Za-z]+\s*{_CALL})?|\bindexedDB(?:\.[A-Za-z]+\s*{_CALL})?|\bcaches\.(?:open|match)\s*{_CALL})"),
+    "state": re.compile(rf"(?:\buseState\s*{_CALL}|\buseReducer\s*{_CALL}|\bcreateStore\s*{_CALL}|\bwritable\s*{_CALL}|\bref\s*{_CALL}|\breactive\s*{_CALL})"),
+    "state-transition": re.compile(rf"\bset[A-Z][A-Za-z0-9_$]*\s*{_CALL}"),
+    "behavior-alias": re.compile(r"\b(?:const|let|var)\s+(?:handle[A-Z]\w*|on[A-Z]\w*|submit\w*|save\w*|delete\w*|toggle\w*|open\w*|close\w*|navigate\w*)\s*=\s*(?:[A-Za-z_$][\w$]*(?:\.[A-Za-z_$][\w$]*)*|(?:async\s*)?(?:\([^)]*\)|[A-Za-z_$][\w$]*)\s*=>|function\b)", re.I),
+    "form-contract": re.compile(
+        rf"\b(?:name|type|method|pattern|formaction|value|min|max|step|autocomplete|checked|disabled|readonly|required)\s*(?:=\s*{_ATTRIBUTE_VALUE})?",
+        re.I,
+    ),
+    "framework-binding": re.compile(
+        rf"\b(?:v-model(?::[\w-]+)?(?:\.[\w-]+)*|bind:[\w-]+|ngModel|formControlName|data-bs-(?:toggle|target|dismiss))\s*(?:=\s*{_ATTRIBUTE_VALUE})?",
+        re.I,
+    ),
+    "timer-subscription": re.compile(rf"\b(?:setTimeout|clearTimeout|setInterval|clearInterval|requestAnimationFrame|cancelAnimationFrame|subscribe|unsubscribe)\s*{_CALL}"),
+    "accessibility-contract": re.compile(rf"\b(?:aria-[\w-]+|role|for)\s*=\s*{_ATTRIBUTE_VALUE}", re.I),
+    "test-selector": re.compile(rf"\b(?:data-testid|data-test|data-cy)\s*=\s*{_ATTRIBUTE_VALUE}", re.I),
 }
-SIGNAL_ALGORITHM = "sha256-normalized-signal-expression-v3"
+SIGNAL_ALGORITHM = "sha256-normalized-signal-expression-v4"
+
+
+def without_comments(text: str) -> str:
+    """Blank JS/CSS/HTML comments while preserving offsets and newlines."""
+
+    result = list(text)
+    index = 0
+    quote: str | None = None
+    while index < len(text):
+        char = text[index]
+        if quote:
+            if char == "\\":
+                index += 2
+                continue
+            if char == quote:
+                quote = None
+            index += 1
+            continue
+        if char in {'"', "'", "`"}:
+            quote = char
+            index += 1
+            continue
+        closing = None
+        if text.startswith("//", index):
+            closing = text.find("\n", index + 2)
+            closing = len(text) if closing == -1 else closing
+        elif text.startswith("/*", index):
+            found = text.find("*/", index + 2)
+            closing = len(text) if found == -1 else found + 2
+        elif text.startswith("<!--", index):
+            found = text.find("-->", index + 4)
+            closing = len(text) if found == -1 else found + 3
+        if closing is None:
+            index += 1
+            continue
+        for position in range(index, closing):
+            if result[position] not in "\r\n":
+                result[position] = " "
+        index = closing
+    return "".join(result)
 
 
 def files(root: Path) -> Iterable[Path]:
@@ -58,7 +125,8 @@ def snapshot(root: Path) -> dict:
             continue
         signals: dict[str, list[str]] = {}
         for name, pattern in SIGNALS.items():
-            values = sorted(digest(f"{name}:{normalized_window(text, match.start(), match.end())}") for match in pattern.finditer(text))
+            scan_text = without_comments(text) if name == "auth" else text
+            values = sorted(digest(f"{name}:{normalized_window(scan_text, match.start(), match.end())}") for match in pattern.finditer(scan_text))
             if values:
                 signals[name] = values
                 totals[name] += len(values)
@@ -75,7 +143,7 @@ def snapshot(root: Path) -> dict:
         "totals": dict(sorted(totals.items())),
         "limitations": [
             "Hashes detect changed local source patterns but do not prove semantic equivalence.",
-            "Dynamic aliases, generated code, and runtime-only wiring may be missed.",
+            "Dynamic aliases, arbitrary handler-body semantics, generated code, and runtime-only wiring may be missed.",
             "No source excerpts or literal values are stored.",
         ],
     }

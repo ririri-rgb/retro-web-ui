@@ -12,9 +12,15 @@ Run existing build, typecheck, lint, and test commands. Record unavailable check
 
 Cover at least one critical path and each touched interaction type. Favor existing end-to-end tests. Otherwise perform focused manual checks without mutating production data. Compare handler wiring, request construction, form semantics, route targets, storage keys, loading/error states, focus order, and keyboard activation.
 
+For library dialogs, dropdowns, and transitions, wait for the library's observable lifecycle state rather than sleeping for a guessed duration. Verify portal content receives the theme, Escape closes it, focus returns to the trigger, and no theme attribute remains on a shared portal host after leaving a partially converted route.
+
+For SSR/hydration, inspect the initial response before JavaScript runs, then exercise the hydrated control. Check that the theme root and meaningful content exist in server HTML and that the browser reports no hydration mismatch.
+
 ## Visual checks
 
 Capture representative screens at the application's normal desktop viewport and at an existing responsive breakpoint. Inspect clipping, overflow, focus, labels, contrast, disabled states, modern-style residue, theme-specific structure, and Japanese text fit.
+
+Inspect computed styles for at least the collision-prone controls touched by a component library: radius, foreground/background, fixed dimensions, shadow, display, and positioning. A clean source audit cannot see runtime-injected CSS or prove that an upstream utility lost the cascade.
 
 After a shared theme-kit change, render the showcase for all four themes. A screenshot is evidence of appearance, not behavior.
 

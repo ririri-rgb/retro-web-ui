@@ -35,6 +35,22 @@ Two structurally different conversion checks exercise that semantic step:
 
 The TodoMVC result is from a pinned MIT-licensed upstream checkout used temporarily for validation; the repository stores only the screenshot and evidence, not a vendored copy. The React result is the repository's production-built interaction fixture.
 
+Current main also exercises component-library and rendering-model boundaries in production builds:
+
+| React/MUI/Emotion → Windows 98 | Vue/Bootstrap → Windows XP |
+| --- | --- |
+| ![MUI and Emotion Windows 98 conversion](screenshots/react-mui-windows-98.png) | ![Vue and Bootstrap Windows XP conversion](screenshots/vue-windows-xp.png) |
+
+| Next SSR/Radix/Tailwind → Windows 7 | SvelteKit hydration → Japanese Freeware 2000s |
+| --- | --- |
+| ![Next Windows 7 conversion](screenshots/next-windows-7.png) | ![SvelteKit Japanese freeware conversion](screenshots/svelte-japanese-freeware-2000s.png) |
+
+The tests verify more than screenshots: controlled state, forms/live regions, initial server HTML, hydration, library lifecycle events, portal theme scope, Escape closing, focus return, and targeted computed styles. These are bounded fixtures, not claims that every component in each ecosystem is supported.
+
+A second real-OSS case records a 2026-08-27 manual conversion of the authentication surface of pinned MIT-licensed `naive-ui-admin`: it performs the demo login, follows its real Vue Router transition, and confirms that temporary portal-host theming does not leak into the unconverted dashboard. This heavy checkout is not rerun in CI.
+
+![naive-ui-admin authentication surface converted to Japanese Freeware 2000s](screenshots/real-oss-naive-ui-admin-japanese-freeware.png)
+
 ## Install
 
 Ask Codex's `$skill-installer` to install the versioned Skill directory from GitHub:
@@ -51,7 +67,7 @@ mkdir -p "$HOME/.agents/skills"
 cp -R retro-web-ui/skills/retro-web-ui "$HOME/.agents/skills/"
 ```
 
-For a repository-scoped installation, copy it to the repository's `.agents/skills/retro-web-ui/` directory. Codex also follows symlinked Skill folders. Restart or reload the Codex session if an update does not appear. The core Skill and helper scripts require Python 3.9+ and no third-party Python packages. Visual verification requires an installed Chrome/Chromium-compatible browser only when screenshots are requested. The repository's cross-framework regression harness additionally requires Node.js 20.19+.
+For a repository-scoped installation, copy it to the repository's `.agents/skills/retro-web-ui/` directory. Codex also follows symlinked Skill folders. Restart or reload the Codex session if an update does not appear. The core Skill and helper scripts require Python 3.9+ and no third-party Python packages. Visual verification requires an installed Chrome/Chromium-compatible browser only when screenshots are requested. The repository's cross-framework regression harness additionally requires Node.js 22+ for its dependency-free external browser driver.
 
 Version `0.1.0` is intentionally distributed as one standalone Skill. It is not a universal Plugins Directory package; broader plugin packaging is outside this release's stabilization scope.
 
@@ -110,18 +126,20 @@ Claims below reflect tests in this repository, not theoretical support.
 | Static HTML + Vanilla JS | detector, behavior baseline/compare, real Chrome interactions, all four rendered themes | Verified |
 | TodoMVC `javascript-es6` real OSS | pinned MIT checkout, semantic markup conversion, original/themed build, identical JS bundle, behavior guard, hash routes, visual inspection | Semantic Windows 98 conversion verified; upstream todo-add baseline failure remains |
 | React 19 + Vite 8 + Tailwind 4 | locked production build, semantic Japanese freeware conversion, unchanged handler/state signals, real click smoke | Converted build and interaction verified; broader React ecosystems remain conditional |
-| Vue 3 SFC + Vite 8 + Bootstrap 5 | locked production build, SFC detection, Bootstrap binding risk, form/model capture | Build fixture verified; component plugins require runtime checks |
-| SvelteKit 2 + Svelte 5 | locked static-adapter production build, binding/command detection | Build fixture verified; SSR/hydration remains project-specific |
-| Next.js 16 App Router + Tailwind/Radix-style components | locked static production build, provider/form-contract detection | Build fixture verified; portals and server/client boundaries are conditional |
-| Other SSR/meta-frameworks, Angular, CSS-in-JS, component libraries | documented scoped fallback and preservation rules | Best-effort until tested in the target project |
+| React 19 + MUI 9 + Emotion | production build, controlled input, real portal dialog, Escape/focus return, final DOM/computed style | Semantic Windows 98 fixture verified; selected controls only |
+| Vue 3 SFC + Vite 8 + Bootstrap 5 | production build, `v-model`, validation/form flow, actual Bootstrap modal lifecycle, computed style, screenshot | Semantic Windows XP fixture verified |
+| SvelteKit 2 + Svelte 5 | static prerender production build followed by real hydration, bindings/form/live status, screenshot | Semantic Japanese freeware fixture verified; request SSR untested |
+| Next.js 16 App Router + Tailwind 4 + Radix Dialog | request-time SSR HTML, client-island hydration, controlled form, portal/Escape/focus, desktop/dialog/narrow screenshots | Semantic Windows 7 fixture verified |
+| `naive-ui-admin` real OSS login | pinned MIT checkout, build, Naive UI/Pinia/router flow, real demo login, route/theme cleanup, normal/narrow visual review | Dated manual authentication-surface record; not CI, dashboard not converted |
+| Nuxt, Angular, Astro, other CSS-in-JS and complex libraries | detector or documented scoped fallback only | Best-effort until tested in the target project |
 
-See [Compatibility evidence](docs/compatibility.md) for exact coverage and [Validation report](docs/validation-report.md) for commands and observed failures.
+See [Compatibility evidence](docs/compatibility.md) for exact coverage, the [Validation report](docs/validation-report.md) for current gates, and the [post-v0.1.0 final validation report](docs/final-validation-report.md) for the evidence-based v1 review recommendation.
 
 ## Known limitations and unsupported cases
 
 - A safe general-purpose script cannot infer every card-to-group-box or sidebar-to-property-sheet mapping. Codex performs those meaning-dependent edits.
 - Closed Shadow DOM, canvas/WebGL-only interfaces, cross-origin iframe contents, binary/generated bundles without source, and native desktop apps cannot be safely transformed by this Skill.
-- Portals, virtualized lists, generated class names, CSS-in-JS specificity, Bootstrap data bindings, and SSR hydration need targeted runtime verification.
+- Portals, virtualized lists, generated class names, CSS-in-JS specificity, Bootstrap data bindings, and SSR hydration always need target-specific runtime verification even where one representative fixture now passes.
 - The static audit uses heuristics and can report false positives. A clean audit is not visual proof.
 - The static audit excludes dependency and generated directories; dependency CSS can retain modern styling, so computed-style/screenshot inspection is mandatory.
 - The CSS kit intentionally does not reproduce proprietary Windows icons, fonts, wallpapers, sounds, or extracted system bitmaps.
@@ -139,9 +157,10 @@ npm audit --omit=dev --audit-level=moderate
 .venv/bin/python -m unittest discover -s tests -v
 .venv/bin/python scripts/quick_validate_compat.py skills/retro-web-ui
 .venv/bin/python tests/visual_smoke.py --check-only
+.venv/bin/python tests/runtime_smoke.py --check-only
 ```
 
-The Python unit/Skill helpers have no third-party runtime dependency. `npm ci` installs only the locked framework validation harness. Generate the seven showcase screenshots when shared theme CSS changes:
+The Python unit/Skill helpers have no third-party runtime dependency. `npm ci` installs only the locked framework validation harness. The runtime smoke combines in-app assertions with an external dependency-free Chrome DevTools Protocol driver and fails on browser warnings/errors. CI generates and uploads current browser renders for review. Generate the seven showcase screenshots locally when shared theme CSS changes:
 
 ```bash
 .venv/bin/python tests/visual_smoke.py
