@@ -1,6 +1,6 @@
 # Validation report
 
-Date: 2026-08-26
+Date: 2026-08-27
 Environment: macOS, repository-local Python virtual environment (Python 3.14.3), Node.js 25.9.0, Google Chrome (existing installation)
 
 ## Completed
@@ -14,12 +14,16 @@ Environment: macOS, repository-local Python virtual environment (Python 3.14.3),
 - React 19/Vite 8 semantic conversion: production build passed, pre/post behavior signals were unchanged, a real click changed `aria-pressed`, label, and live status, and the Japanese utility screenshot was inspected.
 - TodoMVC semantic conversion: production build passed, generated JavaScript stayed byte-identical, behavior compare was unchanged, `#/active` and `#/completed` retained selected state, and the Windows 98 screenshot was inspected.
 - Manual all-image inspection: confirmed distinct Win98 bevels, XP themed states, Win7 light command hierarchy, dense Japanese utility composition, and usable narrow stacking.
+- Release-stabilization rerun: clean `npm ci --cache .npm-cache`, all four locked fixture builds, production audit, 23 unit tests, both Skill validators, YAML parsing, real keyboard/click browser smoke, Markdown local-link checks, secret/local-path/history scans, and `git diff --check` passed.
+- Release package rerun: two independently generated `retro-web-ui-0.1.0.zip` files were byte-identical; the checksum passed from a clean download-style directory; the extracted Skill passed both validators and contained its MIT license.
 
 ## Failure-driven iteration
 
 Initial screenshots showed both tab panels simultaneously. Root cause: the shared `.retro-stack` display rule overrode HTML's `hidden` behavior. The fix added a scoped `[hidden] { display: none !important; }` invariant, a test assertion, and a full five-theme rerun.
 
 Independent clean-install testing then found that the reproducible release ZIP omitted the root MIT text. A matching `skills/retro-web-ui/LICENSE` was added so a standalone Skill archive carries its license.
+
+The final clean release build exposed an unignored SvelteKit static `build/` directory. Because CI intentionally requires a clean tree after all fixture builds, this would have blocked both main and tagged release workflows. The exact fixture output path was added to `.gitignore`, then the build and cleanliness gates were rerun.
 
 Real-OSS testing found a behavior-guard false positive when a CSS import was inserted before an unchanged event binding. The signal hash was changed to exclude preceding source context and a regression test was added. Independent review also identified unsafe replacement of an existing bundle output; the generator now refuses it unless the caller reviews and passes `--force`.
 

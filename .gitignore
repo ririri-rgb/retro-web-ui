@@ -8,6 +8,7 @@ node_modules/
 .npm-cache/
 .next/
 .svelte-kit/
+/tests/fixtures/svelte-kit/build/
 .vite/
 .venv/
 *.tmp

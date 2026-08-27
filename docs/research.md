@@ -1,15 +1,17 @@
 # Research basis
 
-Research was performed on 2026-08-26. Primary and canonical sources were preferred.
+Research was performed on 2026-08-26 and rechecked for release on 2026-08-27. Primary and canonical sources were preferred.
 
 ## Codex and Agent Skills
 
 - [OpenAI: Build skills](https://developers.openai.com/codex/skills) defines `SKILL.md`, progressive disclosure, optional scripts/references, and Skill/plugin distribution.
-- [OpenAI skills repository](https://github.com/openai/skills) provides the official Skill Creator and examples.
+- [OpenAI plugins repository](https://github.com/openai/plugins) is the current official public catalog of plugin examples. The earlier [OpenAI skills repository](https://github.com/openai/skills) is now marked deprecated, but remains useful as historical evidence for standalone Skill installation and examples.
 - [Agent Skills specification](https://agentskills.io/) documents the interoperable folder format.
 - Public structures compared: [anthropics/skills](https://github.com/anthropics/skills), [vercel-labs/agent-skills](https://github.com/vercel-labs/agent-skills), [github/awesome-copilot](https://github.com/github/awesome-copilot), [expo/skills](https://github.com/expo/skills), [supabase/agent-skills](https://github.com/supabase/agent-skills), and [cloudflare/skills](https://github.com/cloudflare/skills).
 
 The selected layout keeps one self-contained distributable Skill and repository-level tests/docs. It follows progressive disclosure, uses root-level clean validation, and avoids copying source from repositories whose subtree licenses differ or whose root license is unclear.
+
+For the `0.1.0` stabilization release, current OpenAI guidance was compared with `openai/plugins`, `github/awesome-copilot`, `openai/openai-agents-python`, and `astral-sh/uv`. The release keeps the already-tested standalone Skill archive and GitHub-subdirectory installation rather than introducing a new plugin wrapper. The README follows the observed public-OSS pattern of a concise purpose statement, immediate visual evidence, versioned installation, bounded compatibility claims, verification commands, security/contribution links, license, and tagged release artifacts. Plugin catalog packaging remains a future distribution option rather than an untested `0.1.0` claim.
 
 ## Historical Windows UI
 

@@ -2,6 +2,10 @@
 
 [日本語](README.ja.md)
 
+[![CI](https://github.com/ririri-rgb/retro-web-ui/actions/workflows/ci.yml/badge.svg)](https://github.com/ririri-rgb/retro-web-ui/actions/workflows/ci.yml)
+[![GitHub release](https://img.shields.io/github/v/release/ririri-rgb/retro-web-ui)](https://github.com/ririri-rgb/retro-web-ui/releases/latest)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+
 An open-source Codex Skill that converts an existing web application's interface into one of four desktop-era styles while preserving the application's behavior.
 
 - Windows 98
@@ -33,14 +37,23 @@ The TodoMVC result is from a pinned MIT-licensed upstream checkout used temporar
 
 ## Install
 
-Ask Codex's `$skill-installer` to install this Skill from the GitHub repository after publication, or copy the Skill directory into the current user location:
+Ask Codex's `$skill-installer` to install the versioned Skill directory from GitHub:
+
+```text
+$skill-installer install https://github.com/ririri-rgb/retro-web-ui/tree/v0.1.0/skills/retro-web-ui
+```
+
+Or clone the tagged release and copy the Skill into the current user location:
 
 ```bash
+git clone --branch v0.1.0 --depth 1 https://github.com/ririri-rgb/retro-web-ui.git
 mkdir -p "$HOME/.agents/skills"
-cp -R skills/retro-web-ui "$HOME/.agents/skills/"
+cp -R retro-web-ui/skills/retro-web-ui "$HOME/.agents/skills/"
 ```
 
 For a repository-scoped installation, copy it to the repository's `.agents/skills/retro-web-ui/` directory. Codex also follows symlinked Skill folders. Restart or reload the Codex session if an update does not appear. The core Skill and helper scripts require Python 3.9+ and no third-party Python packages. Visual verification requires an installed Chrome/Chromium-compatible browser only when screenshots are requested. The repository's cross-framework regression harness additionally requires Node.js 20.19+.
+
+Version `0.1.0` is intentionally distributed as one standalone Skill. It is not a universal Plugins Directory package; broader plugin packaging is outside this release's stabilization scope.
 
 ## Use from Codex
 
