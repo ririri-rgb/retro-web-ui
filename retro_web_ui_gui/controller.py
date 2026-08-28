@@ -13,7 +13,7 @@ import os
 from pathlib import Path
 import shlex
 import subprocess
-from typing import Any, Callable, Mapping, Optional, Protocol, Sequence
+from typing import Any, Callable, Mapping, Optional, Protocol, Sequence, Union
 
 from .codex_bridge import BridgeEvent, CodexAvailability, CodexBridge
 from .core_facade import CommandResult as CoreCommandResult, CoreFacade
@@ -47,7 +47,7 @@ class CommandRunResult:
     output: str = ""
 
 
-CommandRunner = Callable[[VerificationApproval], CommandRunResult | bool]
+CommandRunner = Callable[[VerificationApproval], Union[CommandRunResult, bool]]
 
 
 class _ControllerLogic:

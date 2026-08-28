@@ -92,6 +92,8 @@ retained. The GUI does not emulate historical accessibility defects.
 | optional GUI entry point imported Qt for `--version` | packaging | lazy Qt import and actionable missing-extra error | Qt-free clean wheel smoke |
 | project could be changed while an agent turn was active | GUI safety | disable Browse/menu/app/theme/model/effort/start during the turn | widget/controller tests |
 | App Server exit had no reconnect path | Codex integration | fresh transport, reinitialize, durable thread resume/read, rebuilt Git diff | fake transport crash/restart/read and controller recovery tests |
+| Python 3.9 evaluated a PEP 604 union inside a runtime type alias | Platform/packaging | use `typing.Union` at the public minimum, not a CI-version exception | Python-minimum CI plus local modern Python suite |
+| Windows test fixed a POSIX path literal for `config/read` | Platform/test | assert the host-native canonical path representation | Windows GUI matrix and macOS/Linux bridge tests |
 
 The static settings fixture used the real App Server and Terra medium. It
 changed only HTML/CSS/theme assets; JavaScript remained byte-identical. Browser

@@ -152,9 +152,10 @@ class CodexBridgeTests(unittest.TestCase):
         thread.join(1)
         self.assertEqual(models["value"]["data"][0]["id"], "gpt-5.6-terra")
 
-        thread, config = self._request_in_thread(lambda: self.bridge.read_configuration(cwd=Path("/project")))
+        config_cwd = Path.cwd().resolve()
+        thread, config = self._request_in_thread(lambda: self.bridge.read_configuration(cwd=config_cwd))
         request = self._wait_for_write("config/read")
-        self.assertEqual(request["params"], {"cwd": "/project", "includeLayers": False})
+        self.assertEqual(request["params"], {"cwd": str(config_cwd), "includeLayers": False})
         self.process.stdout.emit({"id": request["id"], "result": {"config": {"model": "gpt-5.6-terra"}}})
         thread.join(1)
         self.assertEqual(config["value"]["config"]["model"], "gpt-5.6-terra")
