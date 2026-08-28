@@ -24,6 +24,7 @@ from retro_web_ui_gui.codex_bridge import CodexBridge
 from retro_web_ui_gui.controller import DesktopController
 from retro_web_ui_gui.core_facade import CoreFacade
 from retro_web_ui_gui.workflow import ConversionWorkflow
+from retro_web_ui_gui import __version__
 
 
 class HeadlessWindow:
@@ -117,7 +118,7 @@ def main(argv: list[str] | None = None) -> int:
     )
     facade = CoreFacade()
     workflow = ConversionWorkflow(facade)
-    bridge = CodexBridge(client_name="retro_web_ui_gui_e2e", client_title="Retro Web UI GUI E2E", client_version="0.0.0.dev0")
+    bridge = CodexBridge(client_name="retro_web_ui_gui_e2e", client_title="Retro Web UI GUI E2E", client_version=__version__)
     controller = DesktopController(window, facade=facade, workflow=workflow, bridge=bridge)
     started = time.monotonic()
     exit_code = 1

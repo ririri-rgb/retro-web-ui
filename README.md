@@ -24,7 +24,7 @@ an OpenAI API key, and it does not replace the Core/CLI/Skill conversion logic.
 
 ![Retro Web UI desktop GUI](screenshots/gui/desktop-xp.png)
 
-Download the native archive for macOS, Windows, or Linux from the
+Download the native archive for macOS arm64, Windows x86_64, or Linux x86_64 from the
 [v2.0.0 release](https://github.com/ririri-rgb/retro-web-ui/releases/tag/v2.0.0).
 Python and Qt are included; Codex remains an external prerequisite. The macOS
 archive is ad-hoc signed but not notarized, the Windows archive is unsigned, and

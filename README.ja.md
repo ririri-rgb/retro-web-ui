@@ -15,7 +15,7 @@ Before/Afterを確認できます。OpenAI API keyの入力・保存は行わず
 ![Retro Web UI desktop GUI](screenshots/gui/desktop-xp.png)
 
 [v2.0.0 release](https://github.com/ririri-rgb/retro-web-ui/releases/tag/v2.0.0)から
-macOS / Windows / Linux用native archiveを取得できます。PythonとQtは同梱しますが、Codexは同梱しません。
+macOS arm64 / Windows x86_64 / Linux x86_64用native archiveを取得できます。PythonとQtは同梱しますが、Codexは同梱しません。
 macOS版はad-hoc署名でnotarizeされておらず、Windows版はunsignedです。Linux版は通常のdesktop display stackと`libEGL`を必要とします。起動前にSHA-256を確認してください。
 
 checkoutから起動する場合:

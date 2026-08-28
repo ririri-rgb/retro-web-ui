@@ -106,6 +106,18 @@ changed only HTML/CSS/theme assets; JavaScript remained byte-identical. Browser
 tab switching, form save/status, labels, console, behavior comparison, and audit
 passed before/after.
 
+The final v2.0.0 replay cloned that clean fixture into a new disposable target
+and exercised the GUI controller with App Server client version 2.0.0. Terra
+medium completed in 208.337 seconds without requesting an agent command. The
+workflow classified `Complete`, changed only `index.html`, `styles.css`, and a
+new `retro-windows-xp.css`, reported behavior `unchanged` with zero removed
+protected signals, and returned a clean audit. `app.js` remained byte-identical
+at SHA-256 `cb26d49fe19f5da5f929c892713ffe555decf4155abfed631bc9fc5a7c30a085`.
+An independent browser replay switched General/Notifications and their `hidden`
+states, changed the text and checkbox, submitted the form, observed
+`Settings saved.`, and reported no console warning/error. The rendered surface
+retained the compact XP title bar, tabs, group box, command row, and status bar.
+
 The real OSS loop used pinned MIT TodoMVC
 `ff43b02e59dfa604386bb382034b2cd07c2bcd8a` in a disposable sparse checkout.
 The GUI selected `examples/javascript-es6`, ran a streamed App Server/Skill
