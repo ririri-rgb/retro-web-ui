@@ -27,7 +27,7 @@ an OpenAI API key, and it does not replace the Core/CLI/Skill conversion logic.
 Download the native archive for macOS arm64, Windows x86_64, or Linux x86_64 from the
 [v2.0.0 release](https://github.com/ririri-rgb/retro-web-ui/releases/tag/v2.0.0).
 Python and Qt are included; Codex remains an external prerequisite. The macOS
-archive is ad-hoc signed but not notarized, the Windows archive is unsigned, and
+archive has a verified ad-hoc signature but is not notarized, the Windows archive is unsigned, and
 the Linux archive requires a conventional desktop display stack plus `libEGL`.
 Verify the adjacent SHA-256 file before opening an unsigned package.
 

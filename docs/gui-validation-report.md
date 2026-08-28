@@ -1,7 +1,7 @@
 # Desktop GUI engineering report
 
 Date: 2026-08-29
-Status: v2.0.0 release candidate; publication remains gated by final exact-SHA CI
+Status: v2.0.0 release candidate; publication remains gated by the immutable-tag release workflow and public-download verification
 
 ## Architecture
 
@@ -100,6 +100,9 @@ retained. The GUI does not emulate historical accessibility defects.
 | optional Qt imports were omitted from Linux frozen output | Packaging | explicitly include QtCore/QtGui/QtWidgets while retaining lazy source imports | Linux frozen startup smoke |
 | Linux headless startup lacked `libEGL.so.1` | Platform | declare/install the desktop runtime prerequisite and report system dependencies separately from bundled Python/Qt | Linux native offscreen startup |
 | native archives omitted Qt/PySide license documents | Packaging/security | stage GPL/LGPL and component licenses, source locations, notices, and a hashed per-platform inventory; fail builds when absent | archive unit test and three-OS native packaging gate |
+| Windows checksum manifests used host CRLF and failed Linux publication verification | Packaging/release | write the `sha256sum` manifest as ASCII bytes with an explicit LF terminator | byte-exact unit test, three-OS artifact download, Linux `sha256sum --check` |
+| Windows detected the npm `codex.cmd` shim but tried to spawn the unresolved name | Codex integration/platform | resolve the platform launcher once and use that exact path for App Server startup | launcher-resolution contract and Windows native `appServer: ready` smoke |
+| macOS intermediate bundle reported ad-hoc signing but staging lost resource signatures | Packaging/security | sign the final staged bundle, archive it, re-extract the deliverable, and require `codesign --verify --deep --strict` | archive-signature contract, local downloaded-archive replay, macOS native gate |
 
 The static settings fixture used the real App Server and Terra medium. It
 changed only HTML/CSS/theme assets; JavaScript remained byte-identical. Browser
@@ -137,7 +140,7 @@ not reported as a conversion pass.
 
 ## Validation
 
-- Python: 80 tests pass with PySide6; the same suite passes in the CLI-only
+- Python: 84 tests pass with PySide6; the same suite passes in the CLI-only
   environment with three Qt presentation tests intentionally skipped.
 - App Server contracts: initialization, account/model, thread/start/read/resume and turn, string and
   integer request IDs, command/file/permission/user-input responses,
@@ -162,13 +165,14 @@ not reported as a conversion pass.
   from its disposable local HTTP server; TodoMVC before and after came from
   clean and converted disposable worktrees (the final after-review origin was
   `http://127.0.0.1:8771`). Captures are evidence snapshots, not live previews.
-- GitHub Actions: [CI run 33185574397](https://github.com/ririri-rgb/retro-web-ui/actions/runs/33185574397)
+- GitHub Actions: [CI run 33218091424](https://github.com/ririri-rgb/retro-web-ui/actions/runs/33218091424)
   passed Python 3.9 minimum, three-OS CLI reproducibility/clean install,
   three-OS optional GUI install/state/bridge tests, fixture builds, production
   dependency audit, browser runtime smokes, artifact upload, and diff hygiene.
-  [Native run 33185574363](https://github.com/ririri-rgb/retro-web-ui/actions/runs/33185574363)
-  independently compiled and launched Windows, macOS, and Linux packages after
-  the generalized Qt/Linux fixes; the exact v2/license candidate is rerun before tagging.
+  [Native run 33218091339](https://github.com/ririri-rgb/retro-web-ui/actions/runs/33218091339)
+  independently compiled and launched Windows, macOS, and Linux packages, checked
+  portable checksum manifests and license inventories, and re-extracted the macOS
+  deliverable for strict signature verification.
 
 ## Security
 
@@ -193,9 +197,11 @@ conversion took about 166 seconds. The larger TodoMVC agent turn took about 503
 seconds before the first verification-policy failure; deterministic replay
 after correction ran its build in under 6 seconds.
 
-The CLI-only Python wheel remains under 100 KB without Qt. The local macOS arm64
-native candidate ZIP was about 27.5 MiB and its expanded application about
-77.7 MiB; release assets record exact per-OS sizes and hashes in native reports.
+The CLI-only Python wheel remains under 100 KB without Qt. Exact candidate
+matrix measurements (compressed archive / expanded application) were macOS
+arm64 28,810,232 / 82,378,439 bytes, Windows x86_64 29,875,278 / 75,463,053
+bytes, and Linux x86_64 58,532,221 / 154,239,843 bytes. Published assets carry
+their own exact sizes and hashes in the adjacent native reports.
 The disposable
 TodoMVC checkout plus dependencies was about 70 MB and its isolated npm cache
 about 12 MB. No browser, SDK, or system package was installed.
@@ -204,7 +210,7 @@ about 12 MB. No browser, SDK, or system package was installed.
 
 | Platform | Current evidence |
 | --- | --- |
-| macOS | CI host-native build/startup plus local native app launch with the user's real App Server; two conversions, Chrome runtime/visual, wheel/sdist; ad-hoc signed, not notarized |
+| macOS | CI host-native build/startup plus local native app launch with the user's real App Server; two conversions, Chrome runtime/visual, wheel/sdist; strictly verified ad-hoc signature, not notarized |
 | Windows | GitHub-hosted build, archive, GUI/Core/Skill/App Server readiness smoke, and optional GUI/state/bridge tests; unsigned and no physical-host UX test |
 | Linux | GitHub-hosted build, archive, offscreen GUI/Core/Skill/App Server readiness smoke, and optional GUI/state/bridge tests; requires documented system desktop libraries and no physical-host UX test |
 
@@ -219,8 +225,9 @@ v2.0.0 rather than hidden completed evidence.
 
 GUI limitations:
 
-- Native packages are archives, not MSI/DMG/AppImage installers. macOS is only
-  ad-hoc signed and Windows is unsigned, so operating-system warnings are expected.
+- Native packages are archives, not MSI/DMG/AppImage installers. macOS has a
+  verified ad-hoc signature but is not notarized, and Windows is unsigned, so
+  operating-system warnings are expected.
 - The Before/After tab displays supplied capture evidence, but automatic target
   server discovery and screenshot capture are intentionally not inferred; real
   projects need an authorized runtime URL/command.
@@ -254,6 +261,5 @@ Three-OS native startup, existing regression surfaces, real conversion evidence,
 filesystem/approval boundaries, and packaging failures have converged without a
 new cross-cutting architecture defect. Remaining gaps are disclosed platform UX,
 signing/installer, automatic capture, or target-specific limitations. Publication
-still requires the final versioned commit's normal CI, native matrix, secret and
-archive scans, immutable tag creation, and public-download verification. Existing
-tags remain unchanged.
+still requires immutable tag creation, the tag-triggered rebuild/publication
+workflow, and public-download verification. Existing tags remain unchanged.
