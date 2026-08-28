@@ -95,13 +95,13 @@ def find_product(output: Path, system: str) -> tuple[Path, Path]:
         applications = sorted(output.rglob("*.app"))
         if len(applications) != 1:
             raise RuntimeError(f"Expected one macOS app bundle, found: {applications}")
-        executable = applications[0] / "Contents" / "MacOS" / "launcher"
+        executable = applications[0] / "Contents" / "MacOS" / "retro-web-ui-gui"
         return applications[0], executable
     suffix = ".exe" if system == "windows" else ".bin"
     executables = [
         item
         for item in output.rglob(f"*{suffix}")
-        if item.is_file() and item.name.startswith("launcher")
+        if item.is_file() and item.name.startswith("retro-web-ui-gui")
     ]
     if len(executables) != 1:
         raise RuntimeError(f"Expected one native executable, found: {executables}")
@@ -130,7 +130,7 @@ def stage_product(product: Path, directory: Path, system: str) -> tuple[Path, li
     root = directory / ("retro-web-ui-gui" if system == "linux" else "Retro Web UI GUI")
     root.mkdir(parents=True)
     if system == "macos":
-        shutil.copytree(product, root / product.name, symlinks=True)
+        shutil.copytree(product, root / "Retro Web UI GUI.app", symlinks=True)
     else:
         for path in product.iterdir():
             target = root / path.name
@@ -233,6 +233,7 @@ def main() -> int:
             "nuitka",
             str(ROOT / "retro_web_ui_gui" / "launcher.py"),
             "--standalone",
+            "--output-filename=retro-web-ui-gui",
             "--enable-plugin=pyside6",
             "--include-module=PySide6.QtCore",
             "--include-module=PySide6.QtGui",

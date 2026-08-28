@@ -15,7 +15,8 @@ class NativePackagingTests(unittest.TestCase):
                 root = Path(temporary)
                 product = root / "launcher.dist"
                 product.mkdir()
-                (product / ("launcher.exe" if system == "windows" else "launcher.bin")).write_bytes(b"native")
+                executable_name = "retro-web-ui-gui.exe" if system == "windows" else "retro-web-ui-gui.bin"
+                (product / executable_name).write_bytes(b"native")
                 (product / "QtCore.dll").write_bytes(b"qt")
 
                 staged, license_bundle = stage_product(product, root / "stage", system)
@@ -27,7 +28,7 @@ class NativePackagingTests(unittest.TestCase):
                 self.assertEqual(inventory["platform"], system)
                 self.assertEqual(
                     {entry["path"] for entry in inventory["files"]},
-                    {"QtCore.dll", "launcher.exe"} if system == "windows" else {"QtCore.dll", "launcher.bin"},
+                    {"QtCore.dll", executable_name},
                 )
 
 

@@ -25,7 +25,7 @@ plugins =
 [nuitka]
 macos.permissions =
 mode = standalone
-extra_args = --quiet --noinclude-qt-translations --static-libpython=no --include-package=retro_web_ui --include-package-data=retro_web_ui
+extra_args = --quiet --output-filename=retro-web-ui-gui --noinclude-qt-translations --static-libpython=no --include-package=retro_web_ui --include-package-data=retro_web_ui
 
 [buildozer]
 mode = debug
