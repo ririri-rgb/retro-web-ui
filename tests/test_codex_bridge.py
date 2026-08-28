@@ -7,6 +7,7 @@ import sys
 import threading
 import time
 import unittest
+from unittest import mock
 from typing import Any
 
 _BRIDGE_PATH = Path(__file__).resolve().parents[1] / "retro_web_ui_gui" / "codex_bridge.py"
@@ -159,6 +160,30 @@ class CodexBridgeTests(unittest.TestCase):
         self.process.stdout.emit({"id": request["id"], "result": {"config": {"model": "gpt-5.6-terra"}}})
         thread.join(1)
         self.assertEqual(config["value"]["config"]["model"], "gpt-5.6-terra")
+
+    def test_start_resolves_platform_launcher_before_spawning(self):
+        process = _FakeProcess()
+        launched: list[list[str]] = []
+
+        def factory(argv, **kwargs):
+            launched.append(argv)
+            return process
+
+        bridge = CodexBridge(process_factory=factory)
+        try:
+            with mock.patch.object(_MODULE.shutil, "which", return_value=r"C:\npm\codex.CMD"):
+                thread, result = self._request_in_thread(bridge.start)
+                for _ in range(100):
+                    if process.stdin.writes:
+                        break
+                    time.sleep(0.005)
+                initialize = next(item for item in process.stdin.writes if item.get("method") == "initialize")
+                process.stdout.emit({"id": initialize["id"], "result": {}})
+                thread.join(1)
+            self.assertNotIn("error", result)
+            self.assertEqual(launched[0], [r"C:\npm\codex.CMD", "app-server"])
+        finally:
+            bridge.shutdown(wait_seconds=0)
 
     def test_thread_turn_steer_interrupt_and_diff_events(self):
         self._start()

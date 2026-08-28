@@ -13,6 +13,8 @@ import sys
 from collections.abc import Callable
 from typing import Any
 
+from .codex_bridge import redact_secrets
+
 
 def create_application(workflow_factory: Callable[[], Any] | None = None) -> tuple[Any, Any]:
     try:
@@ -127,6 +129,10 @@ def main(argv: list[str] | None = None) -> int:
             except Exception as error:
                 app_server = "error"
                 app_server_error = type(error).__name__
+                print(
+                    f"App Server smoke failed: {type(error).__name__}: {redact_secrets(str(error))}",
+                    file=sys.stderr,
+                )
         result = {
             "status": "ok",
             "version": __version__,

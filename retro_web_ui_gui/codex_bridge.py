@@ -180,7 +180,7 @@ class CodexBridge:
     def detect(cls, executable: str = "codex", *, timeout: float = 5.0) -> CodexAvailability:
         """Detect a usable CLI and report its version without starting a session."""
 
-        resolved = executable if Path(executable).is_file() else shutil.which(executable)
+        resolved = cls.resolve_executable(executable)
         if not resolved:
             return CodexAvailability(False, None, None, f"Codex executable not found: {executable}")
         try:
@@ -192,6 +192,11 @@ class CodexBridge:
         if completed.returncode != 0:
             return CodexAvailability(False, resolved, None, redact_secrets(completed.stderr.strip() or completed.stdout.strip()))
         return CodexAvailability(True, resolved, completed.stdout.strip() or None)
+
+    @staticmethod
+    def resolve_executable(executable: str) -> Optional[str]:
+        """Resolve platform launchers such as the ``codex.cmd`` npm shim on Windows."""
+        return executable if Path(executable).is_file() else shutil.which(executable)
 
     def add_listener(self, listener: Callable[[BridgeEvent], None]) -> Callable[[], None]:
         with self._lock:
@@ -215,8 +220,9 @@ class CodexBridge:
             self._state = BridgeState.STARTING
             self._shutdown_requested = False
         try:
+            resolved = self.resolve_executable(self.executable) or self.executable
             self._process = self._process_factory(
-                [self.executable, "app-server"],
+                [resolved, "app-server"],
                 cwd=str(cwd) if cwd else None,
                 stdin=subprocess.PIPE,
                 stdout=subprocess.PIPE,

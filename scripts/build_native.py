@@ -193,6 +193,13 @@ def validate_archive_licenses(artifact: Path) -> None:
         raise RuntimeError(f"Native archive is missing required license files: {missing}")
 
 
+def write_checksum_file(artifact: Path, digest: str) -> Path:
+    """Write a portable sha256sum manifest with an explicit LF terminator."""
+    checksum = artifact.with_name(artifact.name + ".sha256")
+    checksum.write_bytes(f"{digest}  {artifact.name}\n".encode("ascii"))
+    return checksum
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--output", type=Path, default=ROOT / "dist" / "native")
@@ -273,8 +280,7 @@ def main() -> int:
         )
         validate_archive_licenses(artifact)
         digest = hashlib.sha256(artifact.read_bytes()).hexdigest()
-        checksum = artifact.with_name(artifact.name + ".sha256")
-        checksum.write_text(f"{digest}  {artifact.name}\n", encoding="utf-8")
+        write_checksum_file(artifact, digest)
         report = {
             "version": VERSION,
             "platform": system,

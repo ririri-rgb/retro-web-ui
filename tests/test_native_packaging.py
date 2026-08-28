@@ -5,10 +5,28 @@ from pathlib import Path
 import tempfile
 import unittest
 
-from scripts.build_native import archive_product, find_product, stage_product, validate_archive_licenses
+from scripts.build_native import (
+    archive_product,
+    find_product,
+    stage_product,
+    validate_archive_licenses,
+    write_checksum_file,
+)
 
 
 class NativePackagingTests(unittest.TestCase):
+    def test_checksum_manifest_uses_portable_lf_line_ending(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            artifact = Path(temporary) / "retro-web-ui-gui-2.0.0-windows-x86_64.zip"
+            artifact.write_bytes(b"native")
+            checksum = write_checksum_file(artifact, "a" * 64)
+
+            self.assertEqual(
+                checksum.read_bytes(),
+                ("a" * 64 + "  retro-web-ui-gui-2.0.0-windows-x86_64.zip\n").encode("ascii"),
+            )
+            self.assertNotIn(b"\r", checksum.read_bytes())
+
     def test_windows_and_linux_archives_include_license_bundle_and_inventory(self) -> None:
         for system, extension in (("windows", ".zip"), ("linux", ".tar.gz")):
             with self.subTest(system=system), tempfile.TemporaryDirectory() as temporary:
