@@ -5,7 +5,7 @@ from pathlib import Path
 import tempfile
 import unittest
 
-from scripts.build_native import archive_product, stage_product, validate_archive_licenses
+from scripts.build_native import archive_product, find_product, stage_product, validate_archive_licenses
 
 
 class NativePackagingTests(unittest.TestCase):
@@ -15,9 +15,12 @@ class NativePackagingTests(unittest.TestCase):
                 root = Path(temporary)
                 product = root / "launcher.dist"
                 product.mkdir()
-                executable_name = "retro-web-ui-gui.exe" if system == "windows" else "retro-web-ui-gui.bin"
+                executable_name = "retro-web-ui-gui.exe" if system == "windows" else "retro-web-ui-gui"
                 (product / executable_name).write_bytes(b"native")
                 (product / "QtCore.dll").write_bytes(b"qt")
+                found_product, found_executable = find_product(root, system)
+                self.assertEqual(found_product, product)
+                self.assertEqual(found_executable, product / executable_name)
 
                 staged, license_bundle = stage_product(product, root / "stage", system)
                 artifact = archive_product(staged, root / f"candidate{extension}", system)

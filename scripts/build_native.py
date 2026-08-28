@@ -97,12 +97,8 @@ def find_product(output: Path, system: str) -> tuple[Path, Path]:
             raise RuntimeError(f"Expected one macOS app bundle, found: {applications}")
         executable = applications[0] / "Contents" / "MacOS" / "retro-web-ui-gui"
         return applications[0], executable
-    suffix = ".exe" if system == "windows" else ".bin"
-    executables = [
-        item
-        for item in output.rglob(f"*{suffix}")
-        if item.is_file() and item.name.startswith("retro-web-ui-gui")
-    ]
+    expected_names = {"retro-web-ui-gui.exe"} if system == "windows" else {"retro-web-ui-gui", "retro-web-ui-gui.bin"}
+    executables = [item for item in output.rglob("*") if item.is_file() and item.name in expected_names]
     if len(executables) != 1:
         raise RuntimeError(f"Expected one native executable, found: {executables}")
     return executables[0].parent, executables[0]
