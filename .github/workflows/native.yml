@@ -3,6 +3,25 @@ name: Native desktop artifacts
 on:
   workflow_call:
   workflow_dispatch:
+  push:
+    branches: [main, codex/retro-web-ui-desktop-gui]
+    paths:
+      - ".github/workflows/native.yml"
+      - "VERSION"
+      - "pyproject.toml"
+      - "deployment/**"
+      - "retro_web_ui_gui/**"
+      - "skills/retro-web-ui/**"
+      - "scripts/build_native.py"
+  pull_request:
+    paths:
+      - ".github/workflows/native.yml"
+      - "VERSION"
+      - "pyproject.toml"
+      - "deployment/**"
+      - "retro_web_ui_gui/**"
+      - "skills/retro-web-ui/**"
+      - "scripts/build_native.py"
 
 permissions:
   contents: read
