@@ -200,6 +200,12 @@ def write_checksum_file(artifact: Path, digest: str) -> Path:
     return checksum
 
 
+def sign_and_verify_macos_bundle(product: Path) -> None:
+    """Seal all bundled code and package data with a verified ad-hoc signature."""
+    run(["codesign", "--force", "--deep", "--sign", "-", str(product)], timeout=300)
+    run(["codesign", "--verify", "--deep", "--strict", "--verbose=2", str(product)], timeout=300)
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--output", type=Path, default=ROOT / "dist" / "native")
@@ -263,6 +269,8 @@ def main() -> int:
         build_environment["NUITKA_CACHE_DIR"] = str(work / "cache" / "nuitka")
         run(command, cwd=work, env=build_environment, timeout=1800)
         product, executable = find_product(build, system)
+        if system == "macos":
+            sign_and_verify_macos_bundle(product)
         environment = dict(os.environ)
         environment.setdefault("QT_QPA_PLATFORM", "offscreen")
         version_output = run([str(executable), "--version"], env=environment, timeout=60).stdout.strip()
@@ -300,7 +308,7 @@ def main() -> int:
             ),
             "codexBundled": False,
             "licenseBundle": license_bundle,
-            "signing": "ad-hoc" if system == "macos" else "unsigned" if system == "windows" else "not-applicable",
+            "signing": "ad-hoc-verified" if system == "macos" else "unsigned" if system == "windows" else "not-applicable",
             "versionOutput": version_output,
             "smoke": smoke_result,
         }

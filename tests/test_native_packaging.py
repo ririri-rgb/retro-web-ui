@@ -4,10 +4,12 @@ import json
 from pathlib import Path
 import tempfile
 import unittest
+from unittest import mock
 
 from scripts.build_native import (
     archive_product,
     find_product,
+    sign_and_verify_macos_bundle,
     stage_product,
     validate_archive_licenses,
     write_checksum_file,
@@ -15,6 +17,19 @@ from scripts.build_native import (
 
 
 class NativePackagingTests(unittest.TestCase):
+    def test_macos_bundle_is_resealed_and_strictly_verified(self) -> None:
+        bundle = Path("/tmp/Retro Web UI GUI.app")
+        with mock.patch("scripts.build_native.run") as runner:
+            sign_and_verify_macos_bundle(bundle)
+
+        self.assertEqual(
+            [call.args[0] for call in runner.call_args_list],
+            [
+                ["codesign", "--force", "--deep", "--sign", "-", str(bundle)],
+                ["codesign", "--verify", "--deep", "--strict", "--verbose=2", str(bundle)],
+            ],
+        )
+
     def test_checksum_manifest_uses_portable_lf_line_ending(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             artifact = Path(temporary) / "retro-web-ui-gui-2.0.0-windows-x86_64.zip"
