@@ -205,7 +205,14 @@ def main() -> int:
             "artifactBytes": artifact.stat().st_size,
             "installedBytes": sum(path.stat().st_size for path in product.rglob("*") if path.is_file()),
             "sha256": digest,
-            "selfContainedPythonQt": True,
+            "bundledPythonQt": True,
+            "systemDependencies": (
+                ["macOS system frameworks"]
+                if system == "macos"
+                else ["Windows system runtime"]
+                if system == "windows"
+                else ["glibc", "libstdc++", "libEGL", "Linux desktop display stack"]
+            ),
             "codexBundled": False,
             "signing": "ad-hoc" if system == "macos" else "unsigned" if system == "windows" else "not-applicable",
             "versionOutput": version_output,
