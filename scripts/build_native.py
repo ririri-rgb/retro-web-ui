@@ -210,6 +210,12 @@ def main() -> int:
     import retro_web_ui
 
     package_root = Path(retro_web_ui.__file__).resolve().parent
+    installed_version = getattr(retro_web_ui, "__version__", None)
+    if installed_version != VERSION:
+        raise RuntimeError(
+            f"Native release build requires installed retro-web-ui {VERSION}; found {installed_version!r}. "
+            "Reinstall the current checkout with: python -m pip install --force-reinstall '.[native]'"
+        )
     if package_root == (ROOT / "skills" / "retro-web-ui").resolve():
         raise RuntimeError(
             "Native release builds require a regular wheel install, not an editable source mapping. "
