@@ -12,6 +12,7 @@ from scripts.build_native import (
     sign_and_verify_macos_bundle,
     stage_product,
     validate_archive_licenses,
+    verify_macos_archive_signature,
     write_checksum_file,
 )
 
@@ -27,6 +28,25 @@ class NativePackagingTests(unittest.TestCase):
             [
                 ["codesign", "--force", "--deep", "--sign", "-", str(bundle)],
                 ["codesign", "--verify", "--deep", "--strict", "--verbose=2", str(bundle)],
+            ],
+        )
+
+    def test_macos_archive_is_reextracted_before_signature_verification(self) -> None:
+        artifact = Path("/tmp/retro-web-ui-gui-2.0.0-macos-arm64.zip")
+        destination = Path("/tmp/signature-check")
+        application = destination / "Retro Web UI GUI" / "Retro Web UI GUI.app"
+        with (
+            mock.patch("scripts.build_native.run") as runner,
+            mock.patch.object(Path, "mkdir"),
+            mock.patch.object(Path, "rglob", return_value=[application]),
+        ):
+            verify_macos_archive_signature(artifact, destination)
+
+        self.assertEqual(
+            [call.args[0] for call in runner.call_args_list],
+            [
+                ["ditto", "-x", "-k", str(artifact), str(destination)],
+                ["codesign", "--verify", "--deep", "--strict", "--verbose=2", str(application)],
             ],
         )
 

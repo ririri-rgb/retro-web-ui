@@ -206,6 +206,19 @@ def sign_and_verify_macos_bundle(product: Path) -> None:
     run(["codesign", "--verify", "--deep", "--strict", "--verbose=2", str(product)], timeout=300)
 
 
+def verify_macos_archive_signature(artifact: Path, destination: Path) -> None:
+    """Re-extract the deliverable and verify the signature users receive."""
+    destination.mkdir(parents=True, exist_ok=True)
+    run(["ditto", "-x", "-k", str(artifact), str(destination)], timeout=300)
+    applications = sorted(destination.rglob("*.app"))
+    if len(applications) != 1:
+        raise RuntimeError(f"Expected one archived macOS app bundle, found: {applications}")
+    run(
+        ["codesign", "--verify", "--deep", "--strict", "--verbose=2", str(applications[0])],
+        timeout=300,
+    )
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--output", type=Path, default=ROOT / "dist" / "native")
@@ -269,8 +282,6 @@ def main() -> int:
         build_environment["NUITKA_CACHE_DIR"] = str(work / "cache" / "nuitka")
         run(command, cwd=work, env=build_environment, timeout=1800)
         product, executable = find_product(build, system)
-        if system == "macos":
-            sign_and_verify_macos_bundle(product)
         environment = dict(os.environ)
         environment.setdefault("QT_QPA_PLATFORM", "offscreen")
         version_output = run([str(executable), "--version"], env=environment, timeout=60).stdout.strip()
@@ -281,11 +292,15 @@ def main() -> int:
         smoke_result = json.loads(smoke.stdout.strip().splitlines()[-1])
         extension = ".tar.gz" if system == "linux" else ".zip"
         staged_root, license_bundle = stage_product(product, work / "archive", system)
+        if system == "macos":
+            sign_and_verify_macos_bundle(staged_root / "Retro Web UI GUI.app")
         artifact = archive_product(
             staged_root,
             output / f"retro-web-ui-gui-{VERSION}-{system}-{machine}{extension}",
             system,
         )
+        if system == "macos":
+            verify_macos_archive_signature(artifact, work / "signature-check")
         validate_archive_licenses(artifact)
         digest = hashlib.sha256(artifact.read_bytes()).hexdigest()
         write_checksum_file(artifact, digest)
