@@ -1,14 +1,32 @@
 # Third-party notices
 
-No third-party source code, fonts, icons, Windows assets, or binary dependencies are vendored in this repository. Two documentation screenshots are rendered from temporary upstream checkouts as described below.
+No third-party source code, fonts, icons, Windows assets, or binary dependencies are vendored in this repository. Some documentation screenshots are rendered from the two temporary upstream checkouts described below.
 
 The documentation links to OpenAI, Microsoft, framework, historical software, and independent OSS sources as research references. Linked material remains under its respective owner's terms and is not redistributed here.
 
 98.css, XP.css, 7.css, React95, and other retro UI libraries were evaluated as architecture and interoperability references. Their code and assets are not copied into this project. If a future contribution vendors or derives third-party material, it must record the exact project, version/commit, source URL, license, files used, modifications, and required attribution in this file.
 
+## Optional GUI and deployment tools
+
+The source distribution declares PySide6 as an optional dependency but does not
+vendor its binaries. Qt for Python/PySide6 is available under LGPLv3/GPLv3 or a
+Qt commercial license; redistributors of a native GUI artifact must select and
+comply with the applicable Qt terms and included third-party notices. See
+[Qt for Python licensing](https://doc.qt.io/qtforpython-6/licenses.html).
+
+`deployment/pysidedeploy.spec` names Nuitka as a deployment-time compiler. It is
+not installed by the package and no Nuitka output is committed. Nuitka is
+licensed under the Apache License 2.0; a distributor that uses the spec must
+retain the required notices in its build artifacts.
+
 ## TodoMVC documentation screenshot
 
 `screenshots/todomvc-windows-98.png` shows the rendered `examples/javascript-es6` application from [tastejs/todomvc](https://github.com/tastejs/todomvc) commit `ff43b02e59dfa604386bb382034b2cd07c2bcd8a`, modified in a temporary checkout with this project's Windows 98 CSS and semantic markup mapping. The upstream source is not included. TodoMVC is MIT licensed:
+
+The desktop-GUI engineering record also includes
+`screenshots/gui/todomvc-before.png` and
+`screenshots/gui/todomvc-after-windows-xp.png` from the same pinned checkout.
+They are documentation evidence only; no TodoMVC source is included.
 
 Copyright (c) Addy Osmani, Sindre Sorhus, Pascal Hartig, Stephen Sawchuk.
 

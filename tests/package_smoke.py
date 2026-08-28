@@ -50,6 +50,7 @@ def main() -> int:
             return created.returncode
         python = environment / ("Scripts/python.exe" if sys.platform == "win32" else "bin/python")
         cli = environment / ("Scripts/retro-web-ui.exe" if sys.platform == "win32" else "bin/retro-web-ui")
+        gui = environment / ("Scripts/retro-web-ui-gui.exe" if sys.platform == "win32" else "bin/retro-web-ui-gui")
         installed = run([str(python), "-m", "pip", "install", "--no-index", "--no-deps", str(wheels[0])])
         if installed.returncode:
             print(installed.stdout + installed.stderr, file=sys.stderr)
@@ -74,7 +75,14 @@ def main() -> int:
         if imported.returncode:
             print(imported.stdout + imported.stderr, file=sys.stderr)
             return imported.returncode
-    print("clean wheel install, CLI entry point, manifest, analysis, and shared core passed")
+        gui_imported = run([
+            str(python), "-c", "import retro_web_ui_gui; assert retro_web_ui_gui.__version__",
+        ])
+        gui_version = run([str(gui), "--version"])
+        if gui_imported.returncode or gui_version.returncode or "Retro Web UI GUI" not in gui_version.stdout:
+            print(gui_imported.stdout + gui_imported.stderr + gui_version.stdout + gui_version.stderr, file=sys.stderr)
+            return 1
+    print("clean wheel install, CLI/GUI entry points, manifest, analysis, and shared core passed")
     return 0
 
 

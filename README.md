@@ -13,6 +13,30 @@ An open-source deterministic CLI + Codex Skill that converts an existing web app
 - Windows 7
 - Japanese Freeware 2000s
 
+## Desktop GUI candidate (unreleased)
+
+This candidate adds a Windows XP-style PySide6 desktop orchestration layer.
+It lets a user select a repository/application and theme, inspect deterministic
+analysis, start a bidirectional Codex App Server session with the user's own
+ChatGPT sign-in, answer approval requests, interrupt/reconnect, and review
+verification, Git diff, and Before/After evidence. It does not ask for or store
+an OpenAI API key, and it does not replace the Core/CLI/Skill conversion logic.
+
+![Retro Web UI desktop GUI](screenshots/gui/desktop-xp.png)
+
+Run the unreleased candidate from a checkout:
+
+```bash
+python3 -m venv .venv-gui
+.venv-gui/bin/python -m pip install '.[gui]'
+.venv-gui/bin/retro-web-ui-gui
+```
+
+On Windows, use `.venv-gui\Scripts\retro-web-ui-gui.exe`. Codex must already be
+installed and signed in with ChatGPT; the GUI starts `codex app-server` locally
+over stdio. The published `v1.1.0` release remains the immutable CLI + Skill
+baseline and does not contain this candidate. See the [desktop architecture](docs/gui-architecture.md).
+
 This is not a color preset and not a component library tied to React. The CLI makes repeatable inspection, behavior signals, theme assets, diagnostics, and verification evidence machine-readable. The Skill uses that evidence to choose a framework-aware integration strategy, map modern UI structures to desktop-era semantics, and perform the contextual/runtime/visual review that a deterministic tool cannot safely replace.
 
 ![Modern interface before conversion](screenshots/showcase-modern.png)

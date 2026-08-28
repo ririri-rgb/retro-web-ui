@@ -4,6 +4,28 @@
 
 既存Webアプリの機能を維持しながら、UIを Windows 98 / Windows XP / Windows 7 / 2000年代の日本製Windowsフリーソフト風へ変換するCLI + Codex Skillです。単なる配色変更ではなく、card→group box、toggle→checkbox、settings sidebar→property sheet等を意味に応じて再構成します。
 
+## デスクトップGUI candidate（未release）
+
+このcandidateには、Windows XP風のPySide6デスクトップGUIがあります。
+repository/applicationと4テーマを選択し、Core/CLIによる解析とbehavior baselineを確認したうえで、
+ユーザー本人のChatGPT sign-inを再利用するCodex App Server sessionを開始できます。
+GUI内でagent event、command/file/permission approval、interrupt/reconnect、verification、Git diff、
+Before/Afterを確認できます。OpenAI API keyの入力・保存は行わず、semantic conversion engineをGUIへ再実装していません。
+
+![Retro Web UI desktop GUI](screenshots/gui/desktop-xp.png)
+
+checkoutからの起動:
+
+```bash
+python3 -m venv .venv-gui
+.venv-gui/bin/python -m pip install '.[gui]'
+.venv-gui/bin/retro-web-ui-gui
+```
+
+Windowsでは`.venv-gui\Scripts\retro-web-ui-gui.exe`を使います。Codexが既にinstallされ、
+ChatGPTでsign in済みである必要があります。公開済み`v1.1.0`はimmutableなCLI + Skill baselineであり、
+この未release GUI candidateは含みません。詳細は[Desktop GUI architecture](docs/gui-architecture.md)を参照してください。
+
 変換前と4テーマの実描画結果は[英語README](README.md)冒頭で比較できます。5枚は同一HTML・同一JavaScriptを使っています。さらに、pinned TodoMVC、React/Vite、React/MUI/Emotion、Vue/Bootstrap、SvelteKit、Next App Router/Radix/Tailwind、およびpinned `naive-ui-admin`のlogin surfaceで、範囲を区別しながらsemantic変換を検証しています。
 
 現在のmainでは、client rendering、static prerender後のhydration、request-time SSR後のhydration、controlled form、library modal/dialog、body portal、Escape、focus return、routing、live region、desktop/narrow screenshotまで実ブラウザで確認します。これは各ecosystem全体への対応保証ではなく、実証したfixture/surfaceの境界を[Compatibility evidence](docs/compatibility.md)へ明記しています。

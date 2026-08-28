@@ -14,3 +14,8 @@ AST tooling is deliberately not a required runtime dependency. Framework parsers
 The Skill directory under `skills/retro-web-ui/` is also the Python package source. Existing v1.0 helper modules remain the canonical deterministic implementations, the unified CLI calls them, and `retro_web_ui.core` exposes the same functions for future GUI reuse. Legacy script entry points remain available without duplicating detector, behavior, audit, or theme logic.
 
 The CLI never performs universal conversion or implicit package-script execution. Detailed A-D classification, safety rules, and the rationale for keeping semantic/visual reasoning in Codex are recorded in [CLI and Skill responsibility boundary](cli-boundary.md).
+
+The unreleased desktop candidate adds a PySide6/Qt Widgets orchestration layer
+without changing those responsibilities. Its Codex App Server, GUI state,
+approval, and distribution boundaries are recorded in [Desktop GUI
+architecture](gui-architecture.md).
