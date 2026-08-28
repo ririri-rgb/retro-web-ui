@@ -142,6 +142,10 @@ not reported as a conversion pass.
   from its disposable local HTTP server; TodoMVC before and after came from
   clean and converted disposable worktrees (the final after-review origin was
   `http://127.0.0.1:8771`). Captures are evidence snapshots, not live previews.
+- GitHub Actions: [run 33163098701](https://github.com/ririri-rgb/retro-web-ui/actions/runs/33163098701)
+  passed Python 3.9 minimum, three-OS CLI reproducibility/clean install,
+  three-OS optional GUI install/state/bridge tests, fixture builds, production
+  dependency audit, browser runtime smokes, artifact upload, and diff hygiene.
 
 ## Security
 
@@ -175,8 +179,8 @@ about 12 MB. No browser, SDK, or system package was installed.
 | Platform | Current evidence |
 | --- | --- |
 | macOS | local Qt offscreen startup, real App Server, two conversions, Chrome runtime/visual, wheel/sdist, `pyside6-deploy --dry-run` |
-| Windows | CI matrix definition for `.[gui]`, offscreen widget/controller/bridge tests and entry point; native artifact not yet signed/built locally |
-| Linux | CI matrix definition for `.[gui]`, offscreen widget/controller/bridge tests and entry point; native artifact not yet built locally |
+| Windows | GitHub-hosted runner passed `.[gui]` install, GUI entry point, offscreen widget/controller/bridge tests; native artifact not yet signed/built |
+| Linux | GitHub-hosted runner passed `.[gui]` install, GUI entry point, offscreen widget/controller/bridge tests; native artifact not yet built |
 
 The immediate install format is the optional Python wheel extra (`.[gui]`), so
 CLI-only users do not receive Qt. `deployment/pysidedeploy.spec` records the
@@ -200,8 +204,8 @@ GUI limitations:
 - MCP elicitation and client-defined dynamic tool execution receive a
   correlated unsupported-method response and are surfaced for diagnosis; the implemented interactive surface covers
   conversion-relevant command, file, permission, and tool question events.
-- Native packaging evidence on Windows/Linux depends on the new CI job and must
-  be reviewed before a production GUI release.
+- Native `.exe`/AppImage packaging remains unverified even though the Windows
+  and Linux wheel-install/startup/state CI jobs pass.
 
 Skill limitations remain separate: static behavior hashes are review signals,
 not semantic proof; dependency CSS, portals, hydration, virtualized UI, canvas,
@@ -217,9 +221,9 @@ fixed at their owning boundaries and covered by regression tests. Remaining
 issues are bounded distribution/runtime-capture limitations or target-specific
 semantic work rather than evidence that the architecture is in the wrong layer.
 
-**Release recommendation: Ready for GUI release review**, conditional on the
-new three-OS GUI CI matrix passing and a reviewer choosing the distribution
-scope. Because this is a new end-user desktop product and adds an optional large
+**Release recommendation: Ready for GUI release review.** The three-OS GUI
+matrix passes; a reviewer still needs to choose the distribution scope. Because
+this is a new end-user desktop product and adds an optional large
 runtime plus App Server contract, `v2.0.0` is the clearer recommendation if the
 native GUI is presented as a primary supported interface. A `v1.2.0` release is
 reasonable only if the GUI remains explicitly experimental and wheel-only.
