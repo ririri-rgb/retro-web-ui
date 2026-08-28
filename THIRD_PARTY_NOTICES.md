@@ -1,6 +1,6 @@
 # Third-party notices
 
-No third-party source code, fonts, icons, Windows assets, or binary dependencies are vendored in this repository. Some documentation screenshots are rendered from the two temporary upstream checkouts described below.
+No third-party source code, fonts, icons, or proprietary Windows assets are vendored in this repository. Source distributions do not vendor binary dependencies. Native desktop release archives do include a CPython runtime and Qt for Python shared libraries; their notices, license texts, corresponding-source locations, and a generated component inventory are shipped beside the application under `LICENSES/`.
 
 The documentation links to OpenAI, Microsoft, framework, historical software, and independent OSS sources as research references. Linked material remains under its respective owner's terms and is not redistributed here.
 
@@ -9,15 +9,16 @@ The documentation links to OpenAI, Microsoft, framework, historical software, an
 ## Optional GUI and deployment tools
 
 The source distribution declares PySide6 as an optional dependency but does not
-vendor its binaries. Qt for Python/PySide6 is available under LGPLv3/GPLv3 or a
-Qt commercial license; redistributors of a native GUI artifact must select and
-comply with the applicable Qt terms and included third-party notices. See
+vendor its binaries. Official native archives select PySide6's LGPLv3 option,
+keep Qt as replaceable shared libraries, and include the applicable notices and
+license texts from `distribution/licenses/`. Qt for Python/PySide6 is available
+under LGPLv3/GPLv3 or a Qt commercial license. See
 [Qt for Python licensing](https://doc.qt.io/qtforpython-6/licenses.html).
 
 `deployment/pysidedeploy.spec` names Nuitka as a deployment-time compiler. It is
-not installed by the package and no Nuitka output is committed. Nuitka is
-licensed under the Apache License 2.0; a distributor that uses the spec must
-retain the required notices in its build artifacts.
+not installed by the runtime package and no Nuitka output is committed. Nuitka
+is licensed under the Apache License 2.0; the native distribution notice records
+the generated-runtime terms and upstream source.
 
 ## TodoMVC documentation screenshot
 

@@ -108,19 +108,93 @@ def find_product(output: Path, system: str) -> tuple[Path, Path]:
     return executables[0].parent, executables[0]
 
 
-def archive_product(product: Path, destination: Path, system: str) -> Path:
+def component_inventory(product: Path) -> list[dict[str, object]]:
+    inventory: list[dict[str, object]] = []
+    for path in sorted(product.rglob("*")):
+        relative = path.relative_to(product).as_posix()
+        if path.is_symlink():
+            inventory.append({"path": relative, "type": "symlink", "target": os.readlink(path)})
+        elif path.is_file():
+            inventory.append(
+                {
+                    "path": relative,
+                    "type": "file",
+                    "bytes": path.stat().st_size,
+                    "sha256": hashlib.sha256(path.read_bytes()).hexdigest(),
+                }
+            )
+    return inventory
+
+
+def stage_product(product: Path, directory: Path, system: str) -> tuple[Path, list[str]]:
+    root = directory / ("retro-web-ui-gui" if system == "linux" else "Retro Web UI GUI")
+    root.mkdir(parents=True)
+    if system == "macos":
+        shutil.copytree(product, root / product.name, symlinks=True)
+    else:
+        for path in product.iterdir():
+            target = root / path.name
+            if path.is_dir() and not path.is_symlink():
+                shutil.copytree(path, target, symlinks=True)
+            elif path.is_symlink():
+                target.symlink_to(os.readlink(path))
+            else:
+                shutil.copy2(path, target)
+
+    licenses = root / "LICENSES"
+    shutil.copytree(ROOT / "distribution" / "licenses", licenses)
+    shutil.copy2(ROOT / "LICENSE", licenses / "PROJECT-LICENSE.txt")
+    shutil.copy2(ROOT / "THIRD_PARTY_NOTICES.md", licenses / "THIRD_PARTY_NOTICES.md")
+    inventory = {
+        "schemaVersion": 1,
+        "application": "Retro Web UI GUI",
+        "version": VERSION,
+        "platform": system,
+        "files": component_inventory(product),
+    }
+    (licenses / "NATIVE_COMPONENTS.json").write_text(
+        json.dumps(inventory, indent=2, sort_keys=True) + "\n", encoding="utf-8"
+    )
+    return root, sorted(path.name for path in licenses.iterdir() if path.is_file())
+
+
+def archive_product(staged_root: Path, destination: Path, system: str) -> Path:
     destination.parent.mkdir(parents=True, exist_ok=True)
     if system == "macos":
-        run(["ditto", "-c", "-k", "--sequesterRsrc", "--keepParent", str(product), str(destination)])
+        run(["ditto", "-c", "-k", "--sequesterRsrc", "--keepParent", str(staged_root), str(destination)])
     elif system == "windows":
         with zipfile.ZipFile(destination, "w", compression=zipfile.ZIP_DEFLATED, compresslevel=9) as archive:
-            for path in sorted(product.rglob("*")):
+            for path in sorted(staged_root.rglob("*")):
                 if path.is_file():
-                    archive.write(path, Path("Retro Web UI GUI") / path.relative_to(product))
+                    archive.write(path, staged_root.name / path.relative_to(staged_root))
     else:
         with tarfile.open(destination, "w:gz", format=tarfile.PAX_FORMAT) as archive:
-            archive.add(product, arcname="retro-web-ui-gui", recursive=True)
+            archive.add(staged_root, arcname=staged_root.name, recursive=True)
     return destination
+
+
+def validate_archive_licenses(artifact: Path) -> None:
+    required = {
+        "PROJECT-LICENSE.txt",
+        "THIRD_PARTY_NOTICES.md",
+        "NATIVE-DISTRIBUTION-NOTICE.md",
+        "NATIVE_COMPONENTS.json",
+        "GPL-3.0-only.txt",
+        "LGPL-3.0-only.txt",
+        "PYTHON-3.12-LICENSE.txt",
+        "OPENSSL-LICENSE.txt",
+        "XZ-UTILS-COPYING.txt",
+        "MPDECIMAL-LICENSE.txt",
+    }
+    if artifact.suffix == ".zip":
+        with zipfile.ZipFile(artifact) as archive:
+            names = {Path(name).name for name in archive.namelist() if "/LICENSES/" in name}
+    else:
+        with tarfile.open(artifact, "r:gz") as archive:
+            names = {Path(name).name for name in archive.getnames() if "/LICENSES/" in name}
+    missing = sorted(required - names)
+    if missing:
+        raise RuntimeError(f"Native archive is missing required license files: {missing}")
 
 
 def main() -> int:
@@ -188,11 +262,13 @@ def main() -> int:
         smoke = run(smoke_args, env=environment, timeout=120)
         smoke_result = json.loads(smoke.stdout.strip().splitlines()[-1])
         extension = ".tar.gz" if system == "linux" else ".zip"
+        staged_root, license_bundle = stage_product(product, work / "archive", system)
         artifact = archive_product(
-            product,
+            staged_root,
             output / f"retro-web-ui-gui-{VERSION}-{system}-{machine}{extension}",
             system,
         )
+        validate_archive_licenses(artifact)
         digest = hashlib.sha256(artifact.read_bytes()).hexdigest()
         checksum = artifact.with_name(artifact.name + ".sha256")
         checksum.write_text(f"{digest}  {artifact.name}\n", encoding="utf-8")
@@ -214,6 +290,7 @@ def main() -> int:
                 else ["glibc", "libstdc++", "libEGL", "Linux desktop display stack"]
             ),
             "codexBundled": False,
+            "licenseBundle": license_bundle,
             "signing": "ad-hoc" if system == "macos" else "unsigned" if system == "windows" else "not-applicable",
             "versionOutput": version_output,
             "smoke": smoke_result,
