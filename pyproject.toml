@@ -19,6 +19,14 @@ classifiers = [
 [project.optional-dependencies]
 release = ["build>=1.2,<2"]
 gui = ["PySide6>=6.8,<7"]
+native = [
+  "PySide6==6.11.2",
+  "Nuitka==4.1.1",
+  "Pillow==12.3.0",
+  "ordered-set==4.1.0",
+  "zstandard==0.25.0",
+  "patchelf==0.19.1.0; platform_system == 'Linux'",
+]
 
 [project.urls]
 Homepage = "https://github.com/ririri-rgb/retro-web-ui"

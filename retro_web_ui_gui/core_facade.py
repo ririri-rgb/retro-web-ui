@@ -1,18 +1,23 @@
-"""Safe, GUI-oriented access to the bundled Retro Web UI CLI.
+"""Safe, GUI-oriented access to the canonical Retro Web UI CLI contract.
 
-This module deliberately does not import or reproduce detector, audit, theme, or
-behavior algorithms.  It invokes the CLI shipped beside this repository with a
-fixed interpreter and parses its versioned JSON envelope.
+The installed/frozen desktop uses the exact CLI parser and handlers in-process;
+source checkouts may still inject a CLI path for process-isolation tests.  Both
+routes return the same versioned JSON envelope and neither duplicates detector,
+audit, theme, behavior, or verification logic in the GUI package.
 """
 
 from __future__ import annotations
 
 from dataclasses import dataclass
+from contextlib import redirect_stderr, redirect_stdout
+import io
+import importlib.util
 import json
 from pathlib import Path
 import subprocess
 import sys
 import tempfile
+import threading
 import time
 from typing import Any, Iterable, Optional
 
@@ -85,8 +90,11 @@ def _repository_root() -> Path:
     return Path(__file__).resolve().parents[1]
 
 
+_IN_PROCESS_CLI_LOCK = threading.Lock()
+
+
 class CoreFacade:
-    """Controlled subprocess facade for the canonical bundled CLI.
+    """Controlled facade for the canonical bundled CLI.
 
     The GUI should retain returned documents rather than infer additional
     success semantics from exit codes alone: an exit code of one is an
@@ -100,14 +108,34 @@ class CoreFacade:
         python_executable: Optional[str] = None,
         timeout_seconds: float = 30.0,
     ) -> None:
-        self.cli_path = (cli_path or _repository_root() / "skills" / "retro-web-ui" / "scripts" / "retro_web_ui.py").resolve()
+        if cli_path is not None:
+            self.cli_path = cli_path.resolve()
+        elif importlib.util.find_spec("retro_web_ui") is None:
+            # A raw source checkout has a hyphenated Skill directory and relies
+            # on the legacy script entry point. Installed/frozen distributions
+            # expose the same files as the importable ``retro_web_ui`` package.
+            self.cli_path = (_repository_root() / "skills" / "retro-web-ui" / "scripts" / "retro_web_ui.py").resolve()
+        else:
+            self.cli_path = None
         self.python_executable = python_executable or sys.executable
         self.timeout_seconds = timeout_seconds
 
+    @property
+    def skill_path(self) -> Path:
+        """Return the Skill entry point from the same installed CLI package."""
+        if self.cli_path is not None:
+            return self.cli_path.parents[1] / "SKILL.md"
+        import retro_web_ui
+
+        return Path(retro_web_ui.__file__).resolve().parent / "SKILL.md"
+
     def _run(self, arguments: Iterable[str]) -> CliResponse:
+        values = tuple(map(str, arguments))
+        if self.cli_path is None:
+            return self._run_in_process(values)
         if not self.cli_path.is_file():
             raise CliUnavailableError(f"Bundled Retro Web UI CLI is unavailable: {self.cli_path}")
-        argv = [self.python_executable, str(self.cli_path), *map(str, arguments), "--json"]
+        argv = [self.python_executable, str(self.cli_path), *values, "--json"]
         try:
             completed = subprocess.run(
                 argv,
@@ -125,6 +153,28 @@ class CoreFacade:
             raise CliProtocolError("Bundled Retro Web UI CLI did not return one valid JSON envelope.") from error
         self._validate_envelope(document)
         return CliResponse(document=document, returncode=completed.returncode, stderr=completed.stderr)
+
+    def _run_in_process(self, arguments: tuple[str, ...]) -> CliResponse:
+        """Invoke the packaged CLI unchanged, including its parser/error boundary.
+
+        ``redirect_stdout`` is process-global, so calls are serialized.  The GUI
+        currently runs deterministic analysis sequentially; the lock also keeps
+        future worker-thread use from interleaving envelopes.
+        """
+        try:
+            from retro_web_ui.scripts import retro_web_ui as cli
+        except ImportError as error:
+            raise CliUnavailableError(f"Bundled Retro Web UI CLI is unavailable: {error}") from error
+        stdout = io.StringIO()
+        stderr = io.StringIO()
+        with _IN_PROCESS_CLI_LOCK, redirect_stdout(stdout), redirect_stderr(stderr):
+            returncode = cli.main([*arguments, "--json"])
+        try:
+            document = json.loads(stdout.getvalue())
+        except json.JSONDecodeError as error:
+            raise CliProtocolError("Bundled Retro Web UI CLI did not return one valid JSON envelope.") from error
+        self._validate_envelope(document)
+        return CliResponse(document=document, returncode=returncode, stderr=stderr.getvalue())
 
     @staticmethod
     def _validate_envelope(document: Any) -> None:

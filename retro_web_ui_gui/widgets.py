@@ -226,8 +226,18 @@ class MainWindow(QMainWindow):
         session_menu.addAction(self.cancel_action)
         help_menu = self.menuBar().addMenu("&Help")
         about = QAction("&About Retro Web UI GUI", self)
-        about.triggered.connect(lambda: QMessageBox.about(self, "About", "Retro Web UI GUI\nA local Codex orchestration utility."))
+        about.triggered.connect(self._show_about)
         help_menu.addAction(about)
+
+    def _show_about(self) -> None:
+        from . import __version__
+
+        QMessageBox.about(
+            self,
+            "About Retro Web UI GUI",
+            f"Retro Web UI GUI {__version__}\n"
+            "A local Windows XP-style utility that orchestrates your own Codex session.",
+        )
 
     def _build_toolbar(self) -> None:
         toolbar = QToolBar("Workflow", self)

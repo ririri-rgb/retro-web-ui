@@ -22,6 +22,7 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 from retro_web_ui_gui.codex_bridge import BridgeEvent, CodexBridge
+from retro_web_ui_gui import __version__
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -36,7 +37,7 @@ def main(argv: list[str] | None = None) -> int:
     bridge = CodexBridge(
         client_name="retro_web_ui_app_server_smoke",
         client_title="Retro Web UI App Server Contract Smoke",
-        client_version="0.0.0.dev0",
+        client_version=__version__,
     )
 
     def receive(event: BridgeEvent) -> None:

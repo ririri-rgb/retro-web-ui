@@ -232,7 +232,7 @@ class _ControllerLogic:
         try:
             thread = self.bridge.start_thread(cwd=str(application_root))
             self.thread_id = self._thread_id(thread)
-            skill_path = self.facade.cli_path.parents[1] / "SKILL.md"
+            skill_path = self.facade.skill_path
             turn = self.bridge.start_turn(
                 self.thread_id,
                 [
@@ -410,7 +410,7 @@ class _ControllerLogic:
             "analysis": self.workflow.analysis.document if self.workflow.analysis else None,
             "doctor": self.workflow.doctor.document if self.workflow.doctor else None,
         }
-        skill = self.facade.cli_path.parents[1] / "SKILL.md"
+        skill = self.facade.skill_path
         return (
             "Use the installed $retro-web-ui Skill for this semantic conversion. "
             f"The matching Skill instructions are at {skill}. Convert only the selected application to {snapshot.selected_theme}; "

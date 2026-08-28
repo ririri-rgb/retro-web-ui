@@ -1,0 +1,57 @@
+name: Native desktop artifacts
+
+on:
+  workflow_call:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build-native:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            platform: linux
+          - os: macos-latest
+            platform: macos
+          - os: windows-latest
+            platform: windows
+    runs-on: ${{ matrix.os }}
+    env:
+      QT_QPA_PLATFORM: offscreen
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - uses: actions/setup-node@v5
+        with:
+          node-version: "22"
+      - name: Install pinned native build dependencies
+        run: python -m pip install ".[native]"
+      - name: Install compatible Codex without bundling it
+        shell: bash
+        run: |
+          npm_config_cache="$RUNNER_TEMP/npm-cache" npm install --prefix "$RUNNER_TEMP/codex" @openai/codex@0.150.0-alpha.8
+          echo "$RUNNER_TEMP/codex/node_modules/.bin" >> "$GITHUB_PATH"
+      - name: Verify external Codex prerequisite
+        shell: bash
+        run: |
+          codex --version
+          codex app-server --help
+      - name: Build and exercise host-native application
+        run: python scripts/build_native.py --output dist/native --app-server-smoke
+      - name: Inspect generated artifact metadata
+        shell: bash
+        run: |
+          python -m json.tool dist/native/native-report-*.json
+          python -c "from pathlib import Path; files=list(Path('dist/native').glob('*.sha256')); assert files; print('checksums', len(files))"
+      - name: Upload native release candidates
+        uses: actions/upload-artifact@v6
+        with:
+          name: native-${{ matrix.platform }}
+          path: dist/native/*
+          if-no-files-found: error

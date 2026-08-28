@@ -22,6 +22,13 @@ class CoreFacadeTests(unittest.TestCase):
         self.assertEqual(response.status, "ok")
         self.assertTrue(response.result["manifest_compatible"])
         self.assertEqual(response.document["schema_version"], 1)
+        self.assertTrue(self.facade.skill_path.is_file())
+
+    def test_explicit_cli_path_retains_process_isolation_route(self) -> None:
+        facade = CoreFacade(cli_path=ROOT / "skills" / "retro-web-ui" / "scripts" / "retro_web_ui.py")
+        response = facade.info()
+        self.assertEqual(response.status, "ok")
+        self.assertEqual(facade.skill_path, ROOT / "skills" / "retro-web-ui" / "SKILL.md")
 
     def test_snapshot_is_external_and_compare_is_unchanged(self) -> None:
         target = FIXTURES / "static-html"

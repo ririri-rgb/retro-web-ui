@@ -7,6 +7,8 @@ assistive-technology metadata are retained.
 
 from __future__ import annotations
 
+from PySide6.QtGui import QColor, QIcon, QPainter, QPen, QPixmap
+
 
 XP_STYLESHEET = """
 QWidget {
@@ -56,3 +58,25 @@ QWidget:focus { outline: 1px dotted #000000; }
 def apply_xp_style(application: object) -> None:
     """Apply the shell style without requiring callers to know Qt types."""
     application.setStyleSheet(XP_STYLESHEET)
+
+
+def application_icon(size: int = 64) -> QIcon:
+    """Return an original, code-native icon with an XP utility silhouette."""
+    pixmap = QPixmap(size, size)
+    pixmap.fill(QColor("#008080"))
+    painter = QPainter(pixmap)
+    painter.setRenderHint(QPainter.Antialiasing, False)
+    scale = size / 64
+    painter.setPen(QPen(QColor("#0b1b49"), max(1, round(2 * scale))))
+    painter.setBrush(QColor("#ece9d8"))
+    painter.drawRect(round(8 * scale), round(10 * scale), round(48 * scale), round(42 * scale))
+    painter.setPen(QPen(QColor("#ffffff"), max(1, round(scale))))
+    painter.setBrush(QColor("#0755d5"))
+    painter.drawRect(round(10 * scale), round(12 * scale), round(44 * scale), round(11 * scale))
+    painter.setPen(QPen(QColor("#808080"), max(1, round(scale))))
+    painter.setBrush(QColor("#ffffff"))
+    painter.drawRect(round(14 * scale), round(29 * scale), round(25 * scale), round(7 * scale))
+    painter.setBrush(QColor("#d4d0c8"))
+    painter.drawRect(round(37 * scale), round(40 * scale), round(14 * scale), round(7 * scale))
+    painter.end()
+    return QIcon(pixmap)

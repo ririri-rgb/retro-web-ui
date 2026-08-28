@@ -8,7 +8,7 @@ icon =
 
 [python]
 python_path =
-packages = Nuitka==2.6.8
+packages = Nuitka==4.1.1
 android_packages = buildozer==1.5.0,cython==0.29.33
 
 [qt]
@@ -25,7 +25,7 @@ plugins =
 [nuitka]
 macos.permissions =
 mode = standalone
-extra_args = --quiet --noinclude-qt-translations --static-libpython=no
+extra_args = --quiet --noinclude-qt-translations --static-libpython=no --include-package=retro_web_ui --include-package-data=retro_web_ui
 
 [buildozer]
 mode = debug
