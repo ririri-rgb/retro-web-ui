@@ -4,6 +4,28 @@ All notable changes follow [Keep a Changelog](https://keepachangelog.com/en/1.1.
 
 ## [Unreleased]
 
+## [2.0.0] - 2026-08-29
+
+### Added
+
+- Windows XP-style PySide6 desktop application for project/application selection, four-theme selection, deterministic analysis, behavior baselines, agent progress, approvals, verification, Git diff, and Before/After review.
+- A protocol-isolated `CodexBridge` using the local Codex App Server over stdio with the user's existing ChatGPT sign-in, model discovery, durable threads, streaming events, approvals, interruption, reconnect, and secret redaction.
+- Host-native macOS, Windows, and Linux packages built and startup-tested in CI, with bundled Python/Qt runtimes, external Codex discovery, component inventories, license notices, and SHA-256 files.
+- Fake-stream, state-machine, App Server contract, filesystem-scope, native archive, three-OS portability, accessibility, and GUI visual regression coverage.
+
+### Changed
+
+- Promoted the project from a CLI + Skill release to an end-to-end desktop orchestration product while keeping Core/CLI/Skill as the canonical deterministic and semantic boundaries.
+- Native release publication now requires all three operating-system builds and the full existing CLI/Core/Skill/browser regression suite before GitHub Release creation.
+
+### Fixed
+
+- Restricted agent writes to the canonical selected application and rejected symlink/outside-root selection without reverting pre-existing user changes.
+- Distinguished finite verification commands from long-running development servers and exposed review-required outcomes instead of treating static success as semantic proof.
+- Made the installed/frozen GUI invoke the canonical bundled CLI/Core rather than relying on a source-checkout script path.
+- Recovered App Server sessions through a fresh transport plus durable thread resume after an unexpected process exit.
+- Declared Linux desktop runtime requirements and forced optional Qt modules into frozen bundles so native offscreen startup passes on all three CI hosts.
+
 ## [1.1.0] - 2026-08-27
 
 ### Added

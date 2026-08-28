@@ -1,11 +1,11 @@
 # Desktop GUI engineering report
 
-Date: 2026-08-28
-Status: unreleased candidate; no production tag or release was created
+Date: 2026-08-29
+Status: v2.0.0 release candidate; publication remains gated by final exact-SHA CI
 
 ## Architecture
 
-The candidate uses PySide6/Qt Widgets with a Windows XP desktop-utility shell.
+The desktop release uses PySide6/Qt Widgets with a Windows XP desktop-utility shell.
 Qt preserves the canonical Python Core/CLI boundary, provides native menus,
 group boxes, tabs, lists, dialogs, status bars, keyboard focus, accessibility
 semantics, filesystem/process access, and a practical three-OS deployment
@@ -94,6 +94,12 @@ retained. The GUI does not emulate historical accessibility defects.
 | App Server exit had no reconnect path | Codex integration | fresh transport, reinitialize, durable thread resume/read, rebuilt Git diff | fake transport crash/restart/read and controller recovery tests |
 | Python 3.9 evaluated a PEP 604 union inside a runtime type alias | Platform/packaging | use `typing.Union` at the public minimum, not a CI-version exception | Python-minimum CI plus local modern Python suite |
 | Windows test fixed a POSIX path literal for `config/read` | Platform/test | assert the host-native canonical path representation | Windows GUI matrix and macOS/Linux bridge tests |
+| frozen GUI resolved the source-only CLI path through its own executable | Core/packaging boundary | installed/frozen mode invokes the canonical bundled CLI parser and handlers in-process; explicit source CLI paths retain process isolation | installed-route and explicit-process tests; native Core smoke |
+| editable install and Python 3.14 produced non-reproducible Nuitka discovery | Packaging | require a regular wheel install on pinned CPython 3.12 and isolate all build/cache output | three-OS clean native jobs |
+| macOS icon generation failed `iconutil` validation | Packaging/visual | generate original multi-size ICNS/ICO/PNG assets with pinned Pillow | macOS, Windows, Linux native builds |
+| optional Qt imports were omitted from Linux frozen output | Packaging | explicitly include QtCore/QtGui/QtWidgets while retaining lazy source imports | Linux frozen startup smoke |
+| Linux headless startup lacked `libEGL.so.1` | Platform | declare/install the desktop runtime prerequisite and report system dependencies separately from bundled Python/Qt | Linux native offscreen startup |
+| native archives omitted Qt/PySide license documents | Packaging/security | stage GPL/LGPL and component licenses, source locations, notices, and a hashed per-platform inventory; fail builds when absent | archive unit test and three-OS native packaging gate |
 
 The static settings fixture used the real App Server and Terra medium. It
 changed only HTML/CSS/theme assets; JavaScript remained byte-identical. Browser
@@ -119,7 +125,7 @@ not reported as a conversion pass.
 
 ## Validation
 
-- Python: 78 tests pass with PySide6; the same 78 pass in the CLI-only virtual
+- Python: 80 tests pass with PySide6; the same suite passes in the CLI-only
   environment with three Qt presentation tests intentionally skipped.
 - App Server contracts: initialization, account/model, thread/start/read/resume and turn, string and
   integer request IDs, command/file/permission/user-input responses,
@@ -132,9 +138,11 @@ not reported as a conversion pass.
 - Browser: showcase and React render smoke pass; React/MUI/Emotion,
   Vue/Bootstrap, SvelteKit hydration, and Next SSR/Radix browser/CDP interaction
   smokes pass after rebuilding all five fixtures.
-- Packaging: two wheel/sdist builds are byte-identical. The wheel is 94 KB and
-  sdist 83 KB. A network-isolated, dependency-free clean wheel install passes
-  CLI, Core, manifest, static analysis, GUI package import, and GUI `--version`.
+- Packaging: two wheel/sdist builds are byte-identical. A network-isolated,
+  dependency-free clean wheel install passes CLI, Core, manifest, static
+  analysis, GUI package import, and GUI `--version`. Host-native archives bundle
+  Python/Qt but not Codex, pass application/Core/Skill/App Server readiness
+  smoke, and contain required license files plus component inventories.
 - Visual: offscreen desktop render and real Chrome Before/After images were
   inspected for density, tabs, group boxes, controls, status, typography, and
   XP hierarchy. Browser console review was clean on both conversion targets.
@@ -142,10 +150,13 @@ not reported as a conversion pass.
   from its disposable local HTTP server; TodoMVC before and after came from
   clean and converted disposable worktrees (the final after-review origin was
   `http://127.0.0.1:8771`). Captures are evidence snapshots, not live previews.
-- GitHub Actions: [run 33163098701](https://github.com/ririri-rgb/retro-web-ui/actions/runs/33163098701)
+- GitHub Actions: [CI run 33185574397](https://github.com/ririri-rgb/retro-web-ui/actions/runs/33185574397)
   passed Python 3.9 minimum, three-OS CLI reproducibility/clean install,
   three-OS optional GUI install/state/bridge tests, fixture builds, production
   dependency audit, browser runtime smokes, artifact upload, and diff hygiene.
+  [Native run 33185574363](https://github.com/ririri-rgb/retro-web-ui/actions/runs/33185574363)
+  independently compiled and launched Windows, macOS, and Linux packages after
+  the generalized Qt/Linux fixes; the exact v2/license candidate is rerun before tagging.
 
 ## Security
 
@@ -155,8 +166,10 @@ Targets and app selections are canonicalized; symlink traversal and outside-root
 selection are rejected. Git dirty state is visible, unrelated changes are never
 reverted, baselines are external, subprocess commands use argv with
 `shell=False`, target scripts require approval, and destructive or long-running
-commands are not inferred as verification. No proprietary Windows assets or
-new third-party runtime code is vendored.
+commands are not inferred as verification. No proprietary Windows assets are
+used. Native archives expose bundled runtime files in a hashed inventory and
+include project, Qt/PySide, CPython, OpenSSL, XZ, and mpdecimal notices; Codex
+credentials and the Codex executable are not bundled.
 
 ## Performance and storage
 
@@ -168,9 +181,10 @@ conversion took about 166 seconds. The larger TodoMVC agent turn took about 503
 seconds before the first verification-policy failure; deterministic replay
 after correction ran its build in under 6 seconds.
 
-The Python wheel adds about 94 KB without Qt. The already-installed PySide6
-development tree is about 1.2 GB, but this includes deployment tooling and many
-Qt modules; it is not a measured native application bundle. The disposable
+The CLI-only Python wheel remains under 100 KB without Qt. The local macOS arm64
+native candidate ZIP was about 27.5 MiB and its expanded application about
+77.7 MiB; release assets record exact per-OS sizes and hashes in native reports.
+The disposable
 TodoMVC checkout plus dependencies was about 70 MB and its isolated npm cache
 about 12 MB. No browser, SDK, or system package was installed.
 
@@ -178,23 +192,23 @@ about 12 MB. No browser, SDK, or system package was installed.
 
 | Platform | Current evidence |
 | --- | --- |
-| macOS | local Qt offscreen startup, real App Server, two conversions, Chrome runtime/visual, wheel/sdist, `pyside6-deploy --dry-run` |
-| Windows | GitHub-hosted runner passed `.[gui]` install, GUI entry point, offscreen widget/controller/bridge tests; native artifact not yet signed/built |
-| Linux | GitHub-hosted runner passed `.[gui]` install, GUI entry point, offscreen widget/controller/bridge tests; native artifact not yet built |
+| macOS | CI host-native build/startup plus local native app launch with the user's real App Server; two conversions, Chrome runtime/visual, wheel/sdist; ad-hoc signed, not notarized |
+| Windows | GitHub-hosted build, archive, GUI/Core/Skill/App Server readiness smoke, and optional GUI/state/bridge tests; unsigned and no physical-host UX test |
+| Linux | GitHub-hosted build, archive, offscreen GUI/Core/Skill/App Server readiness smoke, and optional GUI/state/bridge tests; requires documented system desktop libraries and no physical-host UX test |
 
-The immediate install format is the optional Python wheel extra (`.[gui]`), so
-CLI-only users do not receive Qt. `deployment/pysidedeploy.spec` records the
-future standalone `.app`/`.exe`/Linux binary route and was validated with a
-macOS dry run without installing Nuitka or creating a native artifact. Signing,
-notarization, installer UX, updater, and native artifact size remain release
-engineering, not hidden completed evidence.
+The optional Python wheel extra (`.[gui]`) remains available, so CLI-only users
+do not receive Qt. Official release assets are host-native ZIP/tar archives
+produced with pinned CPython 3.12, PySide6 6.11.2, and Nuitka 4.1.1. They are
+portable application folders rather than an MSI/DMG/AppImage. Developer-ID
+notarization, Authenticode, installer UI, and auto-update are explicitly outside
+v2.0.0 rather than hidden completed evidence.
 
 ## Known limitations
 
 GUI limitations:
 
-- Native `.app`/installer/AppImage artifacts and their signing are not produced
-  in this candidate; the tested install path is Python plus the optional Qt extra.
+- Native packages are archives, not MSI/DMG/AppImage installers. macOS is only
+  ad-hoc signed and Windows is unsigned, so operating-system warnings are expected.
 - The Before/After tab displays supplied capture evidence, but automatic target
   server discovery and screenshot capture are intentionally not inferred; real
   projects need an authorized runtime URL/command.
@@ -204,8 +218,9 @@ GUI limitations:
 - MCP elicitation and client-defined dynamic tool execution receive a
   correlated unsupported-method response and are surfaced for diagnosis; the implemented interactive surface covers
   conversion-relevant command, file, permission, and tool question events.
-- Native `.exe`/AppImage packaging remains unverified even though the Windows
-  and Linux wheel-install/startup/state CI jobs pass.
+- Physical Windows/Linux desktop, signing/notarization, auto-update, and
+  accessibility-technology certification remain unverified; CI evidence is
+  host-native offscreen startup plus state/bridge contracts.
 
 Skill limitations remain separate: static behavior hashes are review signals,
 not semantic proof; dependency CSS, portals, hydration, virtualized UI, canvas,
@@ -221,13 +236,12 @@ fixed at their owning boundaries and covered by regression tests. Remaining
 issues are bounded distribution/runtime-capture limitations or target-specific
 semantic work rather than evidence that the architecture is in the wrong layer.
 
-**Release recommendation: Ready for GUI release review.** The three-OS GUI
-matrix passes; a reviewer still needs to choose the distribution scope. Because
-this is a new end-user desktop product and adds an optional large
-runtime plus App Server contract, `v2.0.0` is the clearer recommendation if the
-native GUI is presented as a primary supported interface. A `v1.2.0` release is
-reasonable only if the GUI remains explicitly experimental and wheel-only.
-Before release: review CI artifacts, perform Windows/Linux native launch checks,
-choose icon/installer/signing policy, replace development version strings, run
-secret/license scans, and approve the final release notes. Existing tags must
-remain unchanged.
+**Release recommendation: Ready for v2.0.0 exact-SHA release gates.** The new
+end-user desktop product and App Server contract justify the major version.
+Three-OS native startup, existing regression surfaces, real conversion evidence,
+filesystem/approval boundaries, and packaging failures have converged without a
+new cross-cutting architecture defect. Remaining gaps are disclosed platform UX,
+signing/installer, automatic capture, or target-specific limitations. Publication
+still requires the final versioned commit's normal CI, native matrix, secret and
+archive scans, immutable tag creation, and public-download verification. Existing
+tags remain unchanged.

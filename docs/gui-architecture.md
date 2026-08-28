@@ -1,7 +1,7 @@
 # Desktop GUI architecture
 
-This document describes the unreleased desktop GUI candidate. The published
-`v1.1.0` release and its tags remain an immutable CLI + Skill baseline.
+This document describes the v2 desktop GUI architecture. The published
+`v1.1.0` release and its tags remain an immutable pre-GUI CLI + Skill baseline.
 
 ## Decision
 
@@ -36,12 +36,13 @@ Qt Widgets
               -> Retro Web UI Skill and target application
 ```
 
-`CoreFacade` invokes the CLI script bundled in the same installation. This
-retains app-selection, manifest, output-safety, behavior, theme, audit, and
-verification contracts that are not all exposed by the small public Core
-facade. It parses one versioned JSON envelope and never treats a clean static
-result as semantic success. Target-native verification commands remain plans
-until a user approves the exact argv and working directory.
+`CoreFacade` invokes the canonical CLI parser and handlers in-process from an
+installed or frozen package, while a raw source checkout can still use the same
+CLI through its subprocess boundary. This retains app-selection, manifest,
+output-safety, behavior, theme, audit, and verification contracts without
+duplicating algorithms. It parses one versioned JSON envelope and never treats
+a clean static result as semantic success. Target-native verification commands
+remain plans until a user approves the exact argv and working directory.
 
 `CodexBridge` is GUI-independent. It owns discovery, process lifecycle,
 initialize/initialized negotiation, request correlation, account/config/model
@@ -95,13 +96,16 @@ capability-aware request construction, not a version-specific exception.
 - Conversion completion, deterministic verification, behavior compatibility,
   and visual review are separate states.
 
-## Distribution direction
+## Distribution
 
 The GUI dependency is optional (`.[gui]`) so the CLI + Skill remain usable
-without Qt. `pyside6-deploy` is the primary native packaging route for macOS,
-Windows, and Linux. Wheel installation, GUI startup, and state/bridge tests are
-defined per operating system in CI; signing, notarization, and updater configuration remain release-review work
-because no production release is created in this engineering phase.
+without Qt. The recorded PySide deployment configuration and pinned Nuitka
+compiler produce host-native macOS, Windows, and Linux packages in CI. Every
+package runs GUI/Core/Skill/App Server readiness smoke before upload and ships
+license texts plus a hashed component inventory. Codex is discovered externally
+and is never bundled. macOS is ad-hoc signed but not notarized, Windows is
+unsigned, Linux requires its documented desktop system libraries, and v2 has no
+auto-updater.
 
 The implementation and failure-driven evidence are recorded in the [Desktop
 GUI engineering report](gui-validation-report.md).

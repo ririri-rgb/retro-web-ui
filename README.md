@@ -6,16 +6,16 @@
 [![GitHub release](https://img.shields.io/github/v/release/ririri-rgb/retro-web-ui)](https://github.com/ririri-rgb/retro-web-ui/releases/latest)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
-An open-source deterministic CLI + Codex Skill that converts an existing web application's interface into one of four desktop-era styles while preserving the application's behavior.
+An open-source desktop application, deterministic CLI, and Codex Skill that convert an existing web application's interface into one of four desktop-era styles while preserving the application's behavior.
 
 - Windows 98
 - Windows XP
 - Windows 7
 - Japanese Freeware 2000s
 
-## Desktop GUI candidate (unreleased)
+## Desktop GUI
 
-This candidate adds a Windows XP-style PySide6 desktop orchestration layer.
+The Windows XP-style PySide6 desktop application is a safe orchestration layer.
 It lets a user select a repository/application and theme, inspect deterministic
 analysis, start a bidirectional Codex App Server session with the user's own
 ChatGPT sign-in, answer approval requests, interrupt/reconnect, and review
@@ -24,7 +24,14 @@ an OpenAI API key, and it does not replace the Core/CLI/Skill conversion logic.
 
 ![Retro Web UI desktop GUI](screenshots/gui/desktop-xp.png)
 
-Run the unreleased candidate from a checkout:
+Download the native archive for macOS, Windows, or Linux from the
+[v2.0.0 release](https://github.com/ririri-rgb/retro-web-ui/releases/tag/v2.0.0).
+Python and Qt are included; Codex remains an external prerequisite. The macOS
+archive is ad-hoc signed but not notarized, the Windows archive is unsigned, and
+the Linux archive requires a conventional desktop display stack plus `libEGL`.
+Verify the adjacent SHA-256 file before opening an unsigned package.
+
+Run from a source checkout instead:
 
 ```bash
 python3 -m venv .venv-gui
@@ -34,8 +41,9 @@ python3 -m venv .venv-gui
 
 On Windows, use `.venv-gui\Scripts\retro-web-ui-gui.exe`. Codex must already be
 installed and signed in with ChatGPT; the GUI starts `codex app-server` locally
-over stdio. The published `v1.1.0` release remains the immutable CLI + Skill
-baseline and does not contain this candidate. See the [desktop architecture](docs/gui-architecture.md).
+over stdio and never asks for an API key. Published `v1.1.0` remains the
+immutable pre-GUI CLI + Skill baseline. See the [desktop architecture](docs/gui-architecture.md)
+and [v2 engineering evidence](docs/gui-validation-report.md).
 
 This is not a color preset and not a component library tied to React. The CLI makes repeatable inspection, behavior signals, theme assets, diagnostics, and verification evidence machine-readable. The Skill uses that evidence to choose a framework-aware integration strategy, map modern UI structures to desktop-era semantics, and perform the contextual/runtime/visual review that a deterministic tool cannot safely replace.
 
@@ -80,20 +88,20 @@ A second real-OSS case records a 2026-08-27 manual conversion of the authenticat
 Ask Codex's `$skill-installer` to install the versioned Skill directory from GitHub:
 
 ```text
-$skill-installer install https://github.com/ririri-rgb/retro-web-ui/tree/v1.1.0/skills/retro-web-ui
+$skill-installer install https://github.com/ririri-rgb/retro-web-ui/tree/v2.0.0/skills/retro-web-ui
 ```
 
 Or clone the tagged release and copy the Skill into the current user location:
 
 ```bash
-git clone --branch v1.1.0 --depth 1 https://github.com/ririri-rgb/retro-web-ui.git
+git clone --branch v2.0.0 --depth 1 https://github.com/ririri-rgb/retro-web-ui.git
 mkdir -p "$HOME/.agents/skills"
 cp -R retro-web-ui/skills/retro-web-ui "$HOME/.agents/skills/"
 ```
 
 For a repository-scoped installation, copy it to the repository's `.agents/skills/retro-web-ui/` directory. Codex also follows symlinked Skill folders. Restart or reload the Codex session if an update does not appear. The core Skill and helper scripts require Python 3.9+ and no third-party Python packages. Visual verification requires an installed Chrome/Chromium-compatible browser only when screenshots are requested. The repository's cross-framework regression harness additionally requires Node.js 22+ for its dependency-free external browser driver.
 
-Version `1.1.0` is the current stable CLI + Skill release. It retains the standalone Skill layout and the `v1.0.0` legacy helper entry points while adding the installable deterministic CLI.
+Version `2.0.0` is the current desktop + CLI + Skill release. It retains the standalone Skill layout, installable deterministic CLI, and the `v1.0.0` legacy helper entry points.
 
 ### Install the CLI from a checkout
 
@@ -196,6 +204,8 @@ See [Compatibility evidence](docs/compatibility.md) for exact coverage, the [v1 
 - The static audit excludes dependency and generated directories; dependency CSS can retain modern styling, so computed-style/screenshot inspection is mandatory.
 - The CSS kit intentionally does not reproduce proprietary Windows icons, fonts, wallpapers, sounds, or extracted system bitmaps.
 - Responsive behavior is preserved where practical, but a fixed-window visual composition may need target-specific narrow-screen compromises.
+- Native packages are not Developer ID-notarized or Authenticode-signed in v2.0.0, and there is no auto-updater. Verify checksums and use the operating system's explicit local-app approval flow.
+- The GUI does not infer or install a target application's browser/runtime. Before/After capture remains explicit evidence from an authorized existing runtime.
 
 ## Verification
 
@@ -242,11 +252,13 @@ tests/                     unit, fixture, and browser smoke tests
 docs/                      research, architecture, evidence, and validation records
 screenshots/               generated Before/After documentation images
 scripts/package_cli.py     reproducible wheel/sdist builder
+retro_web_ui_gui/          PySide6 desktop controller, widgets, and CodexBridge
+scripts/build_native.py    host-native build, smoke, notices, and archive gate
 ```
 
 ## Licensing and trademarks
 
-Project code and original CSS are licensed under the [MIT License](LICENSE). No third-party code or proprietary Windows assets are vendored; see [Third-party notices](THIRD_PARTY_NOTICES.md).
+Project code and original CSS are licensed under the [MIT License](LICENSE). No proprietary Windows assets are used. Native archives include Qt/PySide and CPython under their own licenses with component inventories and corresponding notices; see [Third-party notices](THIRD_PARTY_NOTICES.md).
 
 Microsoft and Windows are trademarks of the Microsoft group of companies. This independent project is not affiliated with, endorsed by, or sponsored by Microsoft. Theme names are descriptive compatibility/style references.
 

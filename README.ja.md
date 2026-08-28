@@ -2,11 +2,11 @@
 
 [English](README.md)
 
-既存Webアプリの機能を維持しながら、UIを Windows 98 / Windows XP / Windows 7 / 2000年代の日本製Windowsフリーソフト風へ変換するCLI + Codex Skillです。単なる配色変更ではなく、card→group box、toggle→checkbox、settings sidebar→property sheet等を意味に応じて再構成します。
+既存Webアプリの機能を維持しながら、UIを Windows 98 / Windows XP / Windows 7 / 2000年代の日本製Windowsフリーソフト風へ変換するデスクトップGUI + CLI + Codex Skillです。単なる配色変更ではなく、card→group box、toggle→checkbox、settings sidebar→property sheet等を意味に応じて再構成します。
 
-## デスクトップGUI candidate（未release）
+## デスクトップGUI
 
-このcandidateには、Windows XP風のPySide6デスクトップGUIがあります。
+Windows XP風のPySide6デスクトップGUIを安全なorchestration層として提供します。
 repository/applicationと4テーマを選択し、Core/CLIによる解析とbehavior baselineを確認したうえで、
 ユーザー本人のChatGPT sign-inを再利用するCodex App Server sessionを開始できます。
 GUI内でagent event、command/file/permission approval、interrupt/reconnect、verification、Git diff、
@@ -14,7 +14,11 @@ Before/Afterを確認できます。OpenAI API keyの入力・保存は行わず
 
 ![Retro Web UI desktop GUI](screenshots/gui/desktop-xp.png)
 
-checkoutからの起動:
+[v2.0.0 release](https://github.com/ririri-rgb/retro-web-ui/releases/tag/v2.0.0)から
+macOS / Windows / Linux用native archiveを取得できます。PythonとQtは同梱しますが、Codexは同梱しません。
+macOS版はad-hoc署名でnotarizeされておらず、Windows版はunsignedです。Linux版は通常のdesktop display stackと`libEGL`を必要とします。起動前にSHA-256を確認してください。
+
+checkoutから起動する場合:
 
 ```bash
 python3 -m venv .venv-gui
@@ -23,8 +27,9 @@ python3 -m venv .venv-gui
 ```
 
 Windowsでは`.venv-gui\Scripts\retro-web-ui-gui.exe`を使います。Codexが既にinstallされ、
-ChatGPTでsign in済みである必要があります。公開済み`v1.1.0`はimmutableなCLI + Skill baselineであり、
-この未release GUI candidateは含みません。詳細は[Desktop GUI architecture](docs/gui-architecture.md)を参照してください。
+ChatGPTでsign in済みである必要があります。GUIはAPI keyを要求せず、local stdioの`codex app-server`を使います。
+公開済み`v1.1.0`はimmutableなGUI以前のCLI + Skill baselineです。詳細は
+[Desktop GUI architecture](docs/gui-architecture.md)と[GUI engineering report](docs/gui-validation-report.md)を参照してください。
 
 変換前と4テーマの実描画結果は[英語README](README.md)冒頭で比較できます。5枚は同一HTML・同一JavaScriptを使っています。さらに、pinned TodoMVC、React/Vite、React/MUI/Emotion、Vue/Bootstrap、SvelteKit、Next App Router/Radix/Tailwind、およびpinned `naive-ui-admin`のlogin surfaceで、範囲を区別しながらsemantic変換を検証しています。
 
@@ -35,18 +40,18 @@ ChatGPTでsign in済みである必要があります。公開済み`v1.1.0`はi
 Codexの`$skill-installer`へ、versionを固定したGitHub上のSkill directoryを指定します。
 
 ```text
-$skill-installer install https://github.com/ririri-rgb/retro-web-ui/tree/v1.1.0/skills/retro-web-ui
+$skill-installer install https://github.com/ririri-rgb/retro-web-ui/tree/v2.0.0/skills/retro-web-ui
 ```
 
 またはtagged releaseをcloneして、user scopeへコピーします。
 
 ```bash
-git clone --branch v1.1.0 --depth 1 https://github.com/ririri-rgb/retro-web-ui.git
+git clone --branch v2.0.0 --depth 1 https://github.com/ririri-rgb/retro-web-ui.git
 mkdir -p "$HOME/.agents/skills"
 cp -R retro-web-ui/skills/retro-web-ui "$HOME/.agents/skills/"
 ```
 
-リポジトリ限定で使う場合は `.agents/skills/retro-web-ui/` へコピーします。Skill本体とCLI runtimeはPython 3.9以上だけで動作し、第三者runtime packageは不要です。`v1.1.0`が現在の安定版CLI + Skillで、standalone Skill構成と`v1.0.0`のlegacy helper entry pointを維持しています。
+リポジトリ限定で使う場合は `.agents/skills/retro-web-ui/` へコピーします。Skill本体とCLI runtimeはPython 3.9以上だけで動作し、第三者runtime packageは不要です。`v2.0.0`は現在のdesktop + CLI + Skill releaseで、standalone Skill構成と`v1.0.0`のlegacy helper entry pointを維持しています。
 
 CLIをcheckoutから仮想環境へ導入する場合:
 
@@ -87,5 +92,7 @@ Skillは同梱CLIのmanifest整合を確認し、対象repositoryとapp候補を
 - closed Shadow DOM、Canvas/WebGLのみのUI、cross-origin iframe、sourceのない生成bundleは安全な変換対象外です。
 - Next/Radix、MUI/Emotion、Bootstrap、Naive UIの代表ケースは検証済みですが、SSR hydration、portal、virtualized list、component library、CSS-in-JSは対象アプリごとのruntime検証が必要です。
 - Microsoftのfont、icon、bitmap、wallpaper、sound等は同梱していません。
+- v2.0.0 native archiveはDeveloper ID notarization / Authenticode signingを行っておらず、自動更新もありません。checksumを確認し、OSの明示的なlocal-app許可手順を使ってください。
+- GUIはtarget appのbrowser/runtimeを推測installしません。Before/Afterはユーザーが許可した既存runtimeから得たevidenceを表示します。
 
-実証範囲・未検証範囲は[Compatibility evidence](docs/compatibility.md)、v1実行済み検証は[Validation report](docs/validation-report.md)、v1.0.0 review判断の根拠は[Final validation report](docs/final-validation-report.md)、v1.1.0 CLI + Skillの根拠は[CLI + Skill validation report](docs/cli-validation-report.md)に分けて記録しています。完全な使用方法、troubleshooting、licenseは[英語README](README.md)を参照してください。
+実証範囲・未検証範囲は[Compatibility evidence](docs/compatibility.md)、v1実行済み検証は[Validation report](docs/validation-report.md)、v1.0.0 review判断の根拠は[Final validation report](docs/final-validation-report.md)、v1.1.0 CLI + Skillの根拠は[CLI + Skill validation report](docs/cli-validation-report.md)、v2.0.0 GUIは[GUI engineering report](docs/gui-validation-report.md)に分けて記録しています。完全な使用方法、troubleshooting、licenseは[英語README](README.md)を参照してください。

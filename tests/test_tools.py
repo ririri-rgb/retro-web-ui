@@ -338,7 +338,7 @@ class UnifiedCLITests(unittest.TestCase):
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertEqual(document["schema_version"], 1)
         self.assertEqual(document["tool"]["name"], "retro-web-ui")
-        self.assertEqual(document["tool"]["version"], "1.1.0")
+        self.assertEqual(document["tool"]["version"], "2.0.0")
         self.assertTrue(document["result"]["manifest_compatible"])
         self.assertEqual(len(document["result"]["theme_bundle_sha256"]), 4)
 
@@ -566,10 +566,10 @@ class RepositoryTests(unittest.TestCase):
         manifest = json.loads((SKILL / "manifest.json").read_text(encoding="utf-8"))
         contracts = (SCRIPTS / "contracts.py").read_text(encoding="utf-8")
         pyproject = (ROOT / "pyproject.toml").read_text(encoding="utf-8")
-        self.assertEqual((ROOT / "VERSION").read_text(encoding="utf-8").strip(), "1.1.0")
-        self.assertEqual(manifest["skill_version"], "1.1.0")
-        self.assertIn('TOOL_VERSION = "1.1.0"', contracts)
-        self.assertIn('version = "1.1.0"', pyproject)
+        self.assertEqual((ROOT / "VERSION").read_text(encoding="utf-8").strip(), "2.0.0")
+        self.assertEqual(manifest["skill_version"], "2.0.0")
+        self.assertIn('TOOL_VERSION = "2.0.0"', contracts)
+        self.assertIn('version = "2.0.0"', pyproject)
 
 
 if __name__ == "__main__":
