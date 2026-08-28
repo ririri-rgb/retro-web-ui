@@ -20,7 +20,7 @@ def create_application(workflow_factory: Callable[[], Any] | None = None) -> tup
     except ImportError as error:
         raise RuntimeError(
             "Retro Web UI GUI requires the optional Qt dependency. "
-            "Install it with: pip install 'retro-web-ui-skill[gui]'"
+            f"Install it with: pip install 'retro-web-ui-skill[gui]' ({error})"
         ) from error
 
     from .controller import DesktopController
