@@ -155,6 +155,14 @@ or every Linux desktop configuration.
 | OS signing/reputation acceptance | ad-hoc only; not notarized | unsigned; no physical SmartScreen evidence | not applicable |
 | Physical desktop coverage | current macOS host | unavailable | X11/Wayland unavailable |
 
+The v2.0.1 candidate adds final-archive re-extraction and startup on all three
+host-native CI platforms, a GLIBC 2.35 ceiling, strict post-extraction macOS
+signature verification, physical macOS Finder launch, existing ChatGPT
+authentication reuse, and a real final-archive conversion plus browser replay.
+See the [v2.0.1 distribution hardening validation report](distribution-validation-report.md)
+for exact artifact hashes, sizes, CI runs, failure classification, and the
+remaining release-policy boundaries.
+
 The remaining signing and physical-machine gaps are explicit release-policy or
 credential/hardware boundaries. They must not be described as validated merely
 because an archive built or an offscreen smoke passed.
