@@ -92,7 +92,12 @@ class _ControllerLogic:
         self.facade = facade or CoreFacade()
         self.workflow = workflow or ConversionWorkflow(self.facade)
         self.bridge = bridge or CodexBridge()
-        self.availability_detector = availability_detector or (lambda: CodexBridge.detect(self.bridge.executable))
+        self.availability_detector = availability_detector or (
+            lambda: CodexBridge.detect(
+                self.bridge.executable,
+                forbidden_roots=(self.workflow.project_root,) if self.workflow.project_root else (),
+            )
+        )
         self.command_runner = command_runner
         self.models: list[Mapping[str, Any]] = []
         self.thread_id: Optional[str] = None
@@ -111,10 +116,14 @@ class _ControllerLogic:
             detail = str(redact_secrets(availability.error or "the executable was not found on PATH"))
             self.window.set_codex_state(
                 "unavailable",
-                "Codex is not available. Install Codex, sign in with ChatGPT, and ensure the launcher is on PATH. "
+                "Codex is not available. Install Codex, sign in with ChatGPT, and ensure its official app or launcher is discoverable. "
                 f"Local analysis remains available. Diagnostic: {detail}",
             )
             return availability
+        if availability.executable:
+            # Pin the absolute path that passed detection so start() cannot
+            # select a different launcher after a PATH change.
+            self.bridge.executable = availability.executable
         try:
             if not self._bridge_started:
                 self.bridge.start(cwd=self.workflow.project_root)

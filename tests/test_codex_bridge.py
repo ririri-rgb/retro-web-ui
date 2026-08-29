@@ -2,8 +2,10 @@ from __future__ import annotations
 
 import importlib.util
 import json
+import os
 from pathlib import Path
 import sys
+import tempfile
 import threading
 import time
 import unittest
@@ -169,21 +171,136 @@ class CodexBridgeTests(unittest.TestCase):
             launched.append(argv)
             return process
 
-        bridge = CodexBridge(process_factory=factory)
-        try:
-            with mock.patch.object(_MODULE.shutil, "which", return_value=r"C:\npm\codex.CMD"):
-                thread, result = self._request_in_thread(bridge.start)
-                for _ in range(100):
-                    if process.stdin.writes:
-                        break
-                    time.sleep(0.005)
-                initialize = next(item for item in process.stdin.writes if item.get("method") == "initialize")
-                process.stdout.emit({"id": initialize["id"], "result": {}})
-                thread.join(1)
-            self.assertNotIn("error", result)
-            self.assertEqual(launched[0], [r"C:\npm\codex.CMD", "app-server"])
-        finally:
-            bridge.shutdown(wait_seconds=0)
+        with tempfile.TemporaryDirectory() as temporary:
+            resolved = Path(temporary) / ("codex.cmd" if os.name == "nt" else "codex")
+            resolved.write_bytes(b"launcher")
+            resolved.chmod(0o755)
+            bridge = CodexBridge(process_factory=factory)
+            try:
+                with mock.patch.object(_MODULE.shutil, "which", return_value=str(resolved)):
+                    thread, result = self._request_in_thread(bridge.start)
+                    for _ in range(100):
+                        if process.stdin.writes:
+                            break
+                        time.sleep(0.005)
+                    initialize = next(item for item in process.stdin.writes if item.get("method") == "initialize")
+                    process.stdout.emit({"id": initialize["id"], "result": {}})
+                    thread.join(1)
+                self.assertNotIn("error", result)
+                self.assertEqual(launched[0], [str(resolved.resolve()), "app-server"])
+            finally:
+                bridge.shutdown(wait_seconds=0)
+
+    def test_finder_style_launch_uses_bounded_fallback_when_path_has_no_codex(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            candidate = Path(temporary) / "ChatGPT.app" / "Contents" / "Resources" / "codex"
+            candidate.parent.mkdir(parents=True)
+            candidate.write_bytes(b"launcher")
+            candidate.chmod(0o755)
+            with (
+                mock.patch.object(_MODULE.shutil, "which", return_value=None),
+                mock.patch.object(CodexBridge, "fallback_executable_candidates", return_value=(candidate,)),
+            ):
+                self.assertEqual(CodexBridge.resolve_executable("codex"), str(candidate.resolve()))
+
+    def test_bare_codex_name_does_not_execute_project_local_shadow(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            project = Path(temporary).resolve()
+            shadow = project / ("codex.cmd" if os.name == "nt" else "codex")
+            shadow.write_text("@exit /b 0\n" if os.name == "nt" else "#!/bin/sh\nexit 0\n", encoding="utf-8")
+            shadow.chmod(0o755)
+            original = Path.cwd()
+            try:
+                os.chdir(project)
+                for unsafe_path in ("", ".", os.pathsep.join((".", str(project))), str(project)):
+                    with (
+                        self.subTest(path=unsafe_path),
+                        mock.patch.dict(_MODULE.os.environ, {"PATH": unsafe_path}),
+                        mock.patch.object(CodexBridge, "fallback_executable_candidates", return_value=()),
+                    ):
+                        self.assertIsNone(CodexBridge.resolve_executable("codex"))
+            finally:
+                os.chdir(original)
+
+    def test_path_search_excludes_empty_dot_and_relative_entries(self):
+        absolute = str(Path(tempfile.gettempdir()).resolve())
+        unsafe_path = os.pathsep.join(("", ".", "relative-bin", absolute))
+        with (
+            mock.patch.dict(_MODULE.os.environ, {"PATH": unsafe_path}),
+            mock.patch.object(_MODULE.shutil, "which", return_value=None) as which,
+            mock.patch.object(CodexBridge, "fallback_executable_candidates", return_value=()),
+        ):
+            self.assertIsNone(CodexBridge.resolve_executable("codex"))
+        self.assertEqual(which.call_args.kwargs["path"], absolute)
+
+    def test_relative_explicit_launcher_is_rejected(self):
+        with mock.patch.object(_MODULE.shutil, "which") as which:
+            self.assertIsNone(CodexBridge.resolve_executable("./codex"))
+        which.assert_not_called()
+
+    def test_start_fails_closed_without_spawning_rejected_project_launcher(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            project = Path(temporary).resolve()
+            shadow = project / ("codex.cmd" if os.name == "nt" else "codex")
+            shadow.write_bytes(b"untrusted")
+            shadow.chmod(0o755)
+            factory = mock.Mock()
+            bridge = CodexBridge(process_factory=factory)
+            with (
+                mock.patch.object(_MODULE.shutil, "which", return_value=str(shadow)),
+                mock.patch.object(CodexBridge, "fallback_executable_candidates", return_value=()),
+                self.assertRaises(BridgeUnavailableError),
+            ):
+                bridge.start(cwd=project)
+            factory.assert_not_called()
+            self.assertEqual(bridge.state, BridgeState.EXITED)
+
+    def test_windows_fallback_includes_default_npm_shim(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            roaming = Path(temporary) / "Roaming"
+            local = Path(temporary) / "Local"
+            with (
+                mock.patch.object(_MODULE.sys, "platform", "win32"),
+                mock.patch.dict(
+                    _MODULE.os.environ,
+                    {"APPDATA": str(roaming), "LOCALAPPDATA": str(local)},
+                ),
+            ):
+                candidates = CodexBridge.fallback_executable_candidates()
+            self.assertEqual(candidates[0], roaming / "npm" / "codex.cmd")
+            self.assertIn(local / "Programs" / "ChatGPT" / "resources" / "codex.exe", candidates)
+
+    def test_windows_npm_fallback_is_resolved_and_spawned_as_absolute_path(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            roaming = Path(temporary) / "Roaming"
+            candidate = roaming / "npm" / "codex.cmd"
+            candidate.parent.mkdir(parents=True)
+            candidate.write_text("@exit /b 0\n", encoding="utf-8")
+            candidate.chmod(0o755)
+            process = _FakeProcess()
+            factory = mock.Mock(return_value=process)
+            bridge = CodexBridge(process_factory=factory)
+            try:
+                with (
+                    mock.patch.object(_MODULE.sys, "platform", "win32"),
+                    mock.patch.dict(
+                        _MODULE.os.environ,
+                        {"APPDATA": str(roaming), "LOCALAPPDATA": str(Path(temporary) / "Local")},
+                    ),
+                    mock.patch.object(_MODULE.shutil, "which", return_value=None),
+                ):
+                    thread, result = self._request_in_thread(bridge.start)
+                    for _ in range(100):
+                        if process.stdin.writes:
+                            break
+                        time.sleep(0.005)
+                    initialize = next(item for item in process.stdin.writes if item.get("method") == "initialize")
+                    process.stdout.emit({"id": initialize["id"], "result": {}})
+                    thread.join(1)
+                self.assertNotIn("error", result)
+                self.assertEqual(factory.call_args.args[0], [str(candidate.resolve()), "app-server"])
+            finally:
+                bridge.shutdown(wait_seconds=0)
 
     def test_thread_turn_steer_interrupt_and_diff_events(self):
         self._start()

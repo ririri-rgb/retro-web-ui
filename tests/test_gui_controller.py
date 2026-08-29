@@ -109,9 +109,16 @@ class ControllerTests(unittest.TestCase):
         self.controller.refresh_codex()
         state, message = self.window.states[-1]
         self.assertEqual(state, "unavailable")
-        self.assertIn("PATH", message)
+        self.assertIn("official app or launcher", message)
         self.assertIn("[REDACTED]", message)
         self.assertNotIn("top-secret-token", message)
+
+    def test_detected_absolute_launcher_is_pinned_for_session_start(self) -> None:
+        self.controller.availability_detector = lambda: CodexAvailability(
+            True, "/trusted/Codex.app/Contents/Resources/codex", "codex-cli test"
+        )
+        self.controller.refresh_codex()
+        self.assertEqual(self.bridge.executable, "/trusted/Codex.app/Contents/Resources/codex")
 
     def test_conversion_rechecks_current_chatgpt_auth_before_starting_thread(self) -> None:
         self.controller.select_project(str(FIXTURE))

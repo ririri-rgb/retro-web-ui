@@ -58,7 +58,10 @@ codex app-server --help
 The GUI checks Codex automatically at launch. If Codex is missing or signed
 out, local project analysis remains available; install/sign in to Codex and use
 **Reconnect**. Authentication remains owned by Codex and is not copied into the
-application archive or logs.
+application archive or logs. Desktop launches do not always inherit a terminal
+`PATH`, so the GUI also checks bounded common Codex application/npm locations.
+It rejects relative, current-directory, and selected-project launchers rather
+than executing a repository-local `codex` file.
 
 The bundled Skill is supplied to the GUI's Codex session. It is not installed
 globally into Codex. To use `$retro-web-ui` outside the GUI, install the Skill

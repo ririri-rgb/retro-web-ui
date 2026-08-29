@@ -9,10 +9,12 @@ credentials; authentication remains owned by the user's Codex installation.
 from __future__ import annotations
 
 import json
+import os
 import queue
 import re
 import shutil
 import subprocess
+import sys
 import threading
 import time
 from dataclasses import dataclass, field
@@ -177,10 +179,16 @@ class CodexBridge:
             return tuple(self._approvals.values())
 
     @classmethod
-    def detect(cls, executable: str = "codex", *, timeout: float = 5.0) -> CodexAvailability:
+    def detect(
+        cls,
+        executable: str = "codex",
+        *,
+        timeout: float = 5.0,
+        forbidden_roots: Sequence[Path] = (),
+    ) -> CodexAvailability:
         """Detect a usable CLI and report its version without starting a session."""
 
-        resolved = cls.resolve_executable(executable)
+        resolved = cls.resolve_executable(executable, forbidden_roots=forbidden_roots)
         if not resolved:
             return CodexAvailability(False, None, None, f"Codex executable not found: {executable}")
         try:
@@ -194,9 +202,108 @@ class CodexBridge:
         return CodexAvailability(True, resolved, completed.stdout.strip() or None)
 
     @staticmethod
-    def resolve_executable(executable: str) -> Optional[str]:
-        """Resolve platform launchers such as the ``codex.cmd`` npm shim on Windows."""
-        return executable if Path(executable).is_file() else shutil.which(executable)
+    def resolve_executable(executable: str, *, forbidden_roots: Sequence[Path] = ()) -> Optional[str]:
+        """Resolve Codex without assuming a desktop app inherits shell ``PATH``.
+
+        A bare name is never resolved from the current project directory. This
+        prevents an untrusted repository-local ``codex`` file from shadowing
+        the user's installed launcher.
+        """
+        requested = Path(executable).expanduser()
+        forbidden = tuple(Path(root).expanduser().resolve() for root in forbidden_roots)
+        contains_separator = os.sep in executable or bool(os.altsep and os.altsep in executable)
+        if contains_separator or requested.is_absolute():
+            resolved_request = requested.resolve()
+            if (
+                requested.is_absolute()
+                and CodexBridge._is_launchable(resolved_request)
+                and not CodexBridge._is_within_any(resolved_request, forbidden)
+            ):
+                return str(resolved_request)
+            return None
+        trusted_path = CodexBridge._absolute_search_path()
+        discovered = shutil.which(executable, path=trusted_path) if trusted_path else None
+        if discovered:
+            discovered_path = Path(discovered).resolve()
+            blocked_roots = (Path.cwd(), *forbidden)
+            if CodexBridge._is_launchable(discovered_path) and not CodexBridge._is_within_any(
+                discovered_path, blocked_roots
+            ):
+                return str(discovered_path)
+        if requested.name.casefold() not in {"codex", "codex.exe", "codex.cmd"}:
+            return None
+        # These are bounded install locations rather than PATH-derived paths.
+        # Do not reject them merely because Finder launched with the user's
+        # home as cwd; selected project roots remain forbidden.
+        for candidate in CodexBridge.fallback_executable_candidates():
+            resolved_candidate = candidate.resolve()
+            if CodexBridge._is_launchable(resolved_candidate) and not CodexBridge._is_within_any(
+                resolved_candidate, forbidden
+            ):
+                return str(resolved_candidate)
+        return None
+
+    @staticmethod
+    def _absolute_search_path() -> Optional[str]:
+        """Drop empty, current-directory, and relative PATH entries."""
+        entries = []
+        for entry in os.environ.get("PATH", os.defpath).split(os.pathsep):
+            expanded = os.path.expanduser(entry.strip().strip('"'))
+            if expanded and os.path.isabs(expanded):
+                entries.append(expanded)
+        return os.pathsep.join(entries) or None
+
+    @staticmethod
+    def _is_launchable(candidate: Path) -> bool:
+        return candidate.is_file() and (os.name == "nt" or os.access(candidate, os.X_OK))
+
+    @staticmethod
+    def _is_within_any(candidate: Path, roots: Sequence[Path]) -> bool:
+        for root in roots:
+            try:
+                candidate.relative_to(Path(root).expanduser().resolve())
+                return True
+            except ValueError:
+                continue
+        return False
+
+    @staticmethod
+    def fallback_executable_candidates() -> Tuple[Path, ...]:
+        """Return bounded official/common install locations for GUI launches."""
+        home = Path.home()
+        if sys.platform == "darwin":
+            applications = (Path("/Applications"), home / "Applications")
+            app_resources = tuple(
+                root / app / "Contents" / "Resources" / "codex"
+                for root in applications
+                for app in ("ChatGPT.app", "Codex.app")
+            )
+            return app_resources + (
+                Path("/opt/homebrew/bin/codex"),
+                Path("/usr/local/bin/codex"),
+                home / ".local" / "bin" / "codex",
+                home / ".npm-global" / "bin" / "codex",
+            )
+        if sys.platform.startswith("win"):
+            candidates: list[Path] = []
+            appdata = os.environ.get("APPDATA")
+            local_appdata = os.environ.get("LOCALAPPDATA")
+            if appdata:
+                candidates.append(Path(appdata) / "npm" / "codex.cmd")
+            if local_appdata:
+                candidates.extend(
+                    [
+                        Path(local_appdata) / "Programs" / "ChatGPT" / "resources" / "codex.exe",
+                        Path(local_appdata) / "Programs" / "Codex" / "resources" / "codex.exe",
+                    ]
+                )
+            return tuple(candidates)
+        return (
+            home / ".local" / "bin" / "codex",
+            home / ".npm-global" / "bin" / "codex",
+            Path("/usr/local/bin/codex"),
+            Path("/snap/bin/codex"),
+        )
 
     def add_listener(self, listener: Callable[[BridgeEvent], None]) -> Callable[[], None]:
         with self._lock:
@@ -219,8 +326,13 @@ class CodexBridge:
                 raise BridgeError("CodexBridge exited; create a new bridge or call restart")
             self._state = BridgeState.STARTING
             self._shutdown_requested = False
+        forbidden_roots = (cwd,) if cwd else ()
+        resolved = self.resolve_executable(self.executable, forbidden_roots=forbidden_roots)
+        if not resolved:
+            with self._lock:
+                self._state = BridgeState.EXITED
+            raise BridgeUnavailableError(f"Codex executable could not be resolved safely: {self.executable}")
         try:
-            resolved = self.resolve_executable(self.executable) or self.executable
             self._process = self._process_factory(
                 [resolved, "app-server"],
                 cwd=str(cwd) if cwd else None,

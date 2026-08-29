@@ -109,11 +109,14 @@ does not request an API key or copy credentials. App Server traffic is local
 stdio JSONL; authentication remains owned by Codex.
 
 If the GUI reports **Codex unavailable**, confirm that `codex --version` works
-from a new terminal and that the launcher is on `PATH`. On Windows, the bridge
-resolves npm's `codex.cmd` launcher. If it reports an App Server startup error,
-run `codex app-server --help`, update Codex if necessary, and choose
-**Reconnect**. Local project analysis remains available while Codex is absent
-or signed out.
+from a new terminal. The bridge accepts absolute entries from `PATH` and checks
+bounded common install locations, including the ChatGPT/Codex application
+resources on macOS and npm's `%APPDATA%\npm\codex.cmd` on Windows. Empty,
+current-directory, relative, and selected-project launcher paths are rejected;
+an untrusted repository-local `codex` file is never used as App Server. If the
+GUI reports an App Server startup error, run `codex app-server --help`, update
+Codex if necessary, and choose **Reconnect**. Local project analysis remains
+available while Codex is absent or signed out.
 
 The native archive contains the matching Skill files so the GUI can explicitly
 supply them to its Codex turn. It does not install the Skill into a global Codex
