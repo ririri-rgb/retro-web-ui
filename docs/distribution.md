@@ -81,7 +81,7 @@ tar -xzf retro-web-ui-gui-<version>-linux-x86_64.tar.gz
 ./retro-web-ui-gui/retro-web-ui-gui
 ```
 
-The 2.0.1 candidate is built on Ubuntu 22.04 and rejects an artifact whose
+The 2.0.1 release is built on Ubuntu 22.04 and rejects an artifact whose
 bundled binaries require a glibc newer than 2.35. A compatible libstdc++ and
 the normal Qt X11 or Wayland desktop libraries—including EGL support—remain
 system dependencies. Offscreen CI startup does not prove every physical X11 or
@@ -155,7 +155,7 @@ or every Linux desktop configuration.
 | OS signing/reputation acceptance | ad-hoc only; not notarized | unsigned; no physical SmartScreen evidence | not applicable |
 | Physical desktop coverage | current macOS host | unavailable | X11/Wayland unavailable |
 
-The v2.0.1 candidate adds final-archive re-extraction and startup on all three
+The v2.0.1 release adds final-archive re-extraction and startup on all three
 host-native CI platforms, a GLIBC 2.35 ceiling, strict post-extraction macOS
 signature verification, physical macOS Finder launch, existing ChatGPT
 authentication reuse, and a real final-archive conversion plus browser replay.

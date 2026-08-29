@@ -5,13 +5,14 @@ Date: 2026-08-30
 Candidate commit: `b1ef3a3f8eb38a4a2faee7550dfc6ddd5be4842b` for product code,
 with test-only isolation at `39663c16b16e1e1e03404c3e9cb8be01d9992468`
 
-Status: ready for release review; no release or tag was created
+Status: pre-publication validation completed; v2.0.1 publication approved
 
-This report supplements the [desktop GUI engineering report](gui-validation-report.md).
+This pre-publication report supplements the [desktop GUI engineering report](gui-validation-report.md).
 It covers installation and distribution failures found by replaying the public
 v2.0.0 artifacts and then exercising the hardened v2.0.1 candidate exactly as an
-end user receives it. The public `v2.0.0` release, its tag, and `main` remain at
-`7f7e3007ea3230ed65b748ea9b6527fa71794045` and were not rewritten.
+end user receives it. At the start of this validation, the public `v2.0.0`
+release and `main` pointed to `7f7e3007ea3230ed65b748ea9b6527fa71794045`;
+the existing `v2.0.0` tag was never rewritten.
 
 ## Architecture and scope
 
@@ -206,11 +207,10 @@ coverage. The remaining gaps are explicitly bounded signing, physical-platform,
 installer, and target-specific runtime issues rather than unresolved
 cross-cutting ownership defects.
 
-**Release recommendation: Ready for GUI release review.** Recommended version:
+**Release decision: approved for v2.0.1 publication.** The selected version is
 `v2.0.1`, because the candidate is a backward-compatible security,
 classification, startup, and distribution-hardening patch over v2.0.0 rather
-than a new product boundary. Before publication, a maintainer still needs to
-approve the final report/version, decide whether unsigned/unnotarized archives
-meet release policy, create the immutable tag, let the tag workflow rebuild the
-artifacts, and verify the public downloads. This report does not perform any of
-those publication actions.
+than a new product boundary. The immutable tag workflow must rebuild every
+artifact and the resulting public downloads must be independently verified.
+Tag creation and publication results are recorded by GitHub rather than
+back-filled into this pre-publication report.

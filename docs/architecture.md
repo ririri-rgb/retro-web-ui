@@ -15,7 +15,7 @@ The Skill directory under `skills/retro-web-ui/` is also the Python package sour
 
 The CLI never performs universal conversion or implicit package-script execution. Detailed A-D classification, safety rules, and the rationale for keeping semantic/visual reasoning in Codex are recorded in [CLI and Skill responsibility boundary](cli-boundary.md).
 
-The unreleased desktop candidate adds a PySide6/Qt Widgets orchestration layer
+The desktop application adds a PySide6/Qt Widgets orchestration layer
 without changing those responsibilities. Its Codex App Server, GUI state,
 approval, and distribution boundaries are recorded in [Desktop GUI
 architecture](gui-architecture.md).
