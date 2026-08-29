@@ -15,7 +15,7 @@ import shlex
 import subprocess
 from typing import Any, Callable, Mapping, Optional, Protocol, Sequence, Union
 
-from .codex_bridge import BridgeEvent, CodexAvailability, CodexBridge
+from .codex_bridge import BridgeEvent, CodexAvailability, CodexBridge, redact_secrets
 from .core_facade import CommandResult as CoreCommandResult, CoreFacade
 from .workflow import ConversionWorkflow, ResultClassification, VerificationApproval, WorkflowSnapshot, WorkflowState
 
@@ -50,6 +50,31 @@ class CommandRunResult:
 CommandRunner = Callable[[VerificationApproval], Union[CommandRunResult, bool]]
 
 
+AGENT_RESULT_SCHEMA: Mapping[str, Any] = {
+    "type": "object",
+    "properties": {
+        "classification": {
+            "type": "string",
+            "enum": ["complete", "complete_with_review_items", "review_required", "unsupported"],
+        },
+        "summary": {"type": "string"},
+        "changedFiles": {"type": "array", "items": {"type": "string"}},
+        "reviewItems": {"type": "array", "items": {"type": "string"}},
+        "verificationPerformed": {"type": "array", "items": {"type": "string"}},
+        "verificationUnavailable": {"type": "array", "items": {"type": "string"}},
+    },
+    "required": [
+        "classification",
+        "summary",
+        "changedFiles",
+        "reviewItems",
+        "verificationPerformed",
+        "verificationUnavailable",
+    ],
+    "additionalProperties": False,
+}
+
+
 class _ControllerLogic:
     """Toolkit-neutral controller logic; Qt subclasses only marshal callbacks."""
 
@@ -75,13 +100,20 @@ class _ControllerLogic:
         self._bridge_started = False
         self._interrupt_requested = False
         self._login_id: Optional[str] = None
+        self._agent_result: Optional[Mapping[str, Any]] = None
+        self._agent_result_error: Optional[str] = None
         self._remove_listener = self.bridge.add_listener(self._bridge_listener)
 
     # Readiness/authentication ---------------------------------------------------
     def refresh_codex(self) -> CodexAvailability:
         availability = self.availability_detector()
         if not availability.available:
-            self.window.set_codex_state("unavailable", "Codex is not available. Project analysis and local verification remain available.")
+            detail = str(redact_secrets(availability.error or "the executable was not found on PATH"))
+            self.window.set_codex_state(
+                "unavailable",
+                "Codex is not available. Install Codex, sign in with ChatGPT, and ensure the launcher is on PATH. "
+                f"Local analysis remains available. Diagnostic: {detail}",
+            )
             return availability
         try:
             if not self._bridge_started:
@@ -91,7 +123,12 @@ class _ControllerLogic:
             self.bridge.read_configuration(cwd=self.workflow.project_root)
             self.models = self._models_from(self.bridge.list_models())
         except Exception as error:
-            self.window.set_codex_state("error", f"Codex App Server is unavailable: {type(error).__name__}.")
+            detail = str(redact_secrets(str(error)))
+            self.window.set_codex_state(
+                "error",
+                f"Codex App Server could not start ({type(error).__name__}): {detail}. "
+                "Confirm that `codex app-server --help` works, then reconnect.",
+            )
             return CodexAvailability(False, availability.executable, availability.version, str(error))
         account_type = self._account_type(account)
         if account_type is None:
@@ -105,7 +142,11 @@ class _ControllerLogic:
             setter = getattr(self.window, "set_models", None)
             if callable(setter):
                 setter(self.models, account_text="Signed in with ChatGPT")
-            self.window.set_codex_state("ready", "Codex is ready. Your existing Codex sign-in will be used; no API key is requested.")
+            self.window.set_codex_state(
+                "ready",
+                f"Codex is ready ({availability.version or 'version unavailable'}). "
+                "Your existing ChatGPT sign-in will be used; no API key is requested.",
+            )
         return availability
 
     def begin_chatgpt_login(self) -> Mapping[str, Any]:
@@ -223,6 +264,8 @@ class _ControllerLogic:
             self.workflow.state = WorkflowState.BASELINE_READY
             self.workflow.classification = None
         self.workflow.begin_agent_conversion()
+        self._agent_result = None
+        self._agent_result_error = None
         busy = getattr(self.window, "set_busy", None)
         if callable(busy):
             busy(True, "Project, application, theme, and model are locked for this Codex turn.")
@@ -246,6 +289,7 @@ class _ControllerLogic:
                     "writableRoots": [str(application_root)],
                     "networkAccess": False,
                 },
+                outputSchema=AGENT_RESULT_SCHEMA,
                 **{key: value for key, value in {"model": model, "effort": effort}.items() if value},
             )
         except Exception as error:
@@ -283,6 +327,10 @@ class _ControllerLogic:
         self._schedule_bridge_event(event)
 
     def _consume_bridge_event(self, event: BridgeEvent) -> None:
+        if event.kind == "agent_message_delta":
+            # Deltas are character/token fragments. The authoritative completed
+            # agentMessage item below provides readable, bounded progress.
+            return
         if event.kind == "approval_requested":
             approval = event.data.get("approval", {})
             if isinstance(approval, Mapping):
@@ -300,6 +348,8 @@ class _ControllerLogic:
                     self.bridge.approve(request_id)
                 else:
                     self.bridge.deny(request_id)
+            return
+        if event.kind == "item_completed" and self._consume_completed_item(event):
             return
         if event.kind == "user_input_requested":
             request_id = event.data.get("requestId")
@@ -323,15 +373,58 @@ class _ControllerLogic:
             self.window.set_codex_state("error", "Codex App Server exited unexpectedly. Review the diff and retry when ready.")
         self.window.add_agent_event({"kind": event.kind, "message": self._event_message(event), "detail": json.dumps(dict(event.data), ensure_ascii=False)[:2000]})
 
+    def _consume_completed_item(self, event: BridgeEvent) -> bool:
+        params = event.data.get("params") if isinstance(event.data, Mapping) else None
+        item = params.get("item") if isinstance(params, Mapping) else None
+        if not isinstance(item, Mapping):
+            return False
+        item_type = str(item.get("type") or "item")
+        if item_type == "agentMessage":
+            text = str(item.get("text") or "").strip()
+            phase = str(item.get("phase") or "")
+            event_thread = params.get("threadId") or item.get("threadId")
+            event_turn = params.get("turnId") or item.get("turnId")
+            active_item = bool(
+                self.thread_id
+                and self.turn_id
+                and str(event_thread or "") == self.thread_id
+                and str(event_turn or "") == self.turn_id
+            )
+            parsed = self._parse_agent_result(text) if phase in {"", "final_answer"} else None
+            if parsed is not None and phase != "commentary" and active_item:
+                self._agent_result = parsed
+                message = str(parsed.get("summary") or "Codex completed its semantic assessment.")
+                detail = json.dumps(parsed, ensure_ascii=False, indent=2)
+            else:
+                message = text or "Codex completed an agent message."
+                detail = message
+                if phase == "final_answer" and active_item:
+                    self._agent_result = None
+                    self._agent_result_error = "Codex final output did not match the required result schema."
+                elif phase == "final_answer" and not active_item:
+                    message = "A completed message from another or unidentified turn was not used as this result."
+                    detail = json.dumps(dict(params), ensure_ascii=False, indent=2)
+            self.window.add_agent_event({"kind": "agent_message", "message": message, "detail": detail[:4000]})
+            return True
+        status = str(item.get("status") or "completed")
+        command = item.get("command")
+        label = " ".join(map(str, command)) if isinstance(command, list) else str(command or item_type)
+        self.window.add_agent_event({"kind": item_type, "message": f"{label}: {status}", "detail": json.dumps(dict(item), ensure_ascii=False)[:4000]})
+        return True
+
     def _complete_turn(self, event: BridgeEvent) -> None:
         params = event.data.get("params", {})
         if not isinstance(params, Mapping):
             return
         turn = params.get("turn")
         event_thread = params.get("threadId")
+        event_turn = params.get("turnId")
         if isinstance(turn, Mapping):
             event_thread = turn.get("threadId") or event_thread
+            event_turn = turn.get("id") or event_turn
         if self.thread_id and event_thread not in {None, self.thread_id}:
+            return
+        if self.turn_id and event_turn not in {None, self.turn_id}:
             return
         turn_status = str(turn.get("status")) if isinstance(turn, Mapping) and turn.get("status") else "completed"
         if self._interrupt_requested or turn_status == "interrupted":
@@ -350,11 +443,18 @@ class _ControllerLogic:
         self.request_verification_approvals()
         command_results = self.run_authorized_verification_plans()
         snapshot = self.workflow.verify()
+        snapshot = self.workflow.apply_agent_assessment(dict(self._agent_result) if self._agent_result else None)
         output = self._cli_summary(self.workflow.verification)
         if command_results:
             output += "\n\nTarget command results:\n" + "\n".join(
                 f"{'OK' if item.succeeded else 'FAILED'}: {item.output}" for item in command_results
             )
+        if self._agent_result:
+            output += "\n\nCodex semantic assessment:\n" + json.dumps(dict(self._agent_result), ensure_ascii=False, indent=2)
+        elif self._agent_result_error:
+            output += "\n\nCodex semantic assessment: REVIEW REQUIRED\n" + self._agent_result_error
+        else:
+            output += "\n\nCodex semantic assessment: REVIEW REQUIRED\nNo structured final assessment was received."
         self.window.set_verification(output, result=(snapshot.classification.value if snapshot.classification else "Review required"))
         self.window.set_diff(self._format_diff(snapshot))
         self.window.set_codex_state("ready", "Codex turn completed. Review deterministic verification and the diff.")
@@ -403,19 +503,25 @@ class _ControllerLogic:
 
     def _conversion_prompt(self, snapshot: WorkflowSnapshot) -> str:
         assert snapshot.project_root and snapshot.baseline and snapshot.selected_theme
+        bundle = self.facade.theme_bundle(snapshot.selected_theme)
         context = {
             "project_root": str(snapshot.project_root), "selected_app": snapshot.selected_app,
             "theme": snapshot.selected_theme, "behavior_baseline": str(snapshot.baseline),
             "cli_info": self.workflow.info.document if self.workflow.info else None,
             "analysis": self.workflow.analysis.document if self.workflow.analysis else None,
             "doctor": self.workflow.doctor.document if self.workflow.doctor else None,
+            "precomputed_theme_bundle": bundle.document,
         }
         skill = self.facade.skill_path
         return (
             "Use the installed $retro-web-ui Skill for this semantic conversion. "
             f"The matching Skill instructions are at {skill}. Convert only the selected application to {snapshot.selected_theme}; "
             "preserve behavior, use the bundled CLI evidence, request approval before commands or edits needing it, "
-            "and finish with a concise summary of changed files and review items.\n\n"
+            "and finish with the required structured classification. The GUI already ran the canonical Core/CLI and "
+            "precomputed the exact theme bundle below. In a frozen native package, do not execute doctor.python.executable "
+            "when doctor.python.runnable is false; use the supplied deterministic evidence and let the GUI rerun verification. "
+            "Any unavailable runtime, browser, visual, accessibility, or target-native check must appear in reviewItems and "
+            "verificationUnavailable, and classification must not be complete.\n\n"
             "Structured deterministic context (do not treat it as proof of semantic success):\n"
             + json.dumps(context, ensure_ascii=False, indent=2)
         )
@@ -495,6 +601,27 @@ class _ControllerLogic:
         if isinstance(params, Mapping):
             return str(params.get("message") or params.get("status") or event.kind)
         return event.kind
+
+    @staticmethod
+    def _parse_agent_result(text: str) -> Optional[Mapping[str, Any]]:
+        if not text:
+            return None
+        try:
+            value = json.loads(text)
+        except json.JSONDecodeError:
+            return None
+        if not isinstance(value, Mapping):
+            return None
+        required_lists = ("changedFiles", "reviewItems", "verificationPerformed", "verificationUnavailable")
+        if str(value.get("classification")) not in {
+            "complete", "complete_with_review_items", "review_required", "unsupported"
+        }:
+            return None
+        if not isinstance(value.get("summary"), str):
+            return None
+        if any(not isinstance(value.get(key), list) or not all(isinstance(item, str) for item in value[key]) for key in required_lists):
+            return None
+        return dict(value)
 
     @staticmethod
     def _display_argv(argv: Sequence[str]) -> str:

@@ -1,6 +1,6 @@
 {
   "name": "retro-web-ui-oss",
-  "version": "2.0.0",
+  "version": "2.0.1",
   "private": true,
   "workspaces": [
     "tests/fixtures/react-vite",

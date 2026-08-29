@@ -5,7 +5,7 @@ from __future__ import annotations
 from typing import Any, Iterable, Optional
 
 TOOL_NAME = "retro-web-ui"
-TOOL_VERSION = "2.0.0"
+TOOL_VERSION = "2.0.1"
 CLI_API_VERSION = 1
 JSON_SCHEMA_VERSION = 1
 MANIFEST_SCHEMA_VERSION = 1

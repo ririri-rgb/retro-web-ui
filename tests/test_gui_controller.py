@@ -6,7 +6,7 @@ import tempfile
 import unittest
 
 from retro_web_ui_gui.codex_bridge import BridgeEvent, CodexAvailability
-from retro_web_ui_gui.controller import CommandRunResult, DesktopController
+from retro_web_ui_gui.controller import AGENT_RESULT_SCHEMA, CommandRunResult, DesktopController
 from retro_web_ui_gui.core_facade import CoreFacade
 from retro_web_ui_gui.workflow import ConversionWorkflow, WorkflowState
 
@@ -89,15 +89,29 @@ class ControllerTests(unittest.TestCase):
             "writableRoots": [str(FIXTURE.resolve())],
             "networkAccess": False,
         })
+        self.assertEqual(turn["outputSchema"], AGENT_RESULT_SCHEMA)
         self.assertEqual(turn["input"][0]["type"], "skill")
         self.assertEqual(turn["input"][0]["name"], "retro-web-ui")
         self.assertIn("$retro-web-ui", turn["input"][1]["text"])
         self.assertIn("behavior_baseline", turn["input"][1]["text"])
+        self.assertIn("precomputed_theme_bundle", turn["input"][1]["text"])
+        self.assertIn("doctor.python.runnable", turn["input"][1]["text"])
 
     def test_auth_account_types_are_not_mislabeled_as_chatgpt(self) -> None:
         self.assertTrue(self.controller._requires_login({"account": None}))
         self.assertFalse(self.controller._requires_login({"account": {"type": "chatgpt"}}))
         self.assertEqual(self.controller._account_type({"account": {"type": "apiKey"}}), "apikey")
+
+    def test_missing_codex_diagnostic_is_actionable_and_secret_redacted(self) -> None:
+        self.controller.availability_detector = lambda: CodexAvailability(
+            False, None, None, "launcher failed with Bearer top-secret-token"
+        )
+        self.controller.refresh_codex()
+        state, message = self.window.states[-1]
+        self.assertEqual(state, "unavailable")
+        self.assertIn("PATH", message)
+        self.assertIn("[REDACTED]", message)
+        self.assertNotIn("top-secret-token", message)
 
     def test_conversion_rechecks_current_chatgpt_auth_before_starting_thread(self) -> None:
         self.controller.select_project(str(FIXTURE))
@@ -179,6 +193,60 @@ class ControllerTests(unittest.TestCase):
         self.assertEqual(ran, [("npm", "run", "build")])
         self.assertIn("Target command results", self.window.verification)
         self.assertIn(controller.workflow.state, {WorkflowState.REVIEW_REQUIRED, WorkflowState.COMPLETE})
+
+    def test_completed_agent_message_is_readable_and_review_gap_is_not_complete(self) -> None:
+        controller = self.controller
+        controller.select_project(str(FIXTURE))
+        controller.select_theme("windows-xp")
+        snapshot = controller.create_baseline()
+        self.addCleanup(lambda: snapshot.baseline and snapshot.baseline.parent.exists() and __import__("shutil").rmtree(snapshot.baseline.parent))
+        controller.thread_id = "thr_1"; controller.turn_id = "turn_1"; controller.workflow.begin_agent_conversion()
+        result = {
+            "classification": "complete",
+            "summary": "Converted the selected application.",
+            "changedFiles": ["index.html", "styles.css"],
+            "reviewItems": ["Browser-based visual review was unavailable."],
+            "verificationPerformed": ["static audit", "behavior compare"],
+            "verificationUnavailable": ["browser runtime"],
+        }
+        event_count = len(self.window.events)
+        self.bridge.emit("agent_message_delta", {"params": {"delta": "noise"}})
+        self.assertEqual(len(self.window.events), event_count)
+        self.bridge.emit("item_completed", {"params": {"threadId": "thr_1", "turnId": "turn_1", "item": {
+            "type": "agentMessage", "phase": "final_answer", "text": __import__("json").dumps(result),
+        }}})
+        self.assertEqual(self.window.events[-1]["message"], result["summary"])
+        self.bridge.emit("turn_completed", {"params": {"threadId": "thr_1", "turn": {"id": "turn_1"}}})
+        self.assertEqual(self.window.result, "complete_with_review_items")
+        self.assertIn("browser runtime", self.window.verification)
+
+    def test_missing_structured_final_assessment_requires_review(self) -> None:
+        controller = self.controller
+        controller.select_project(str(FIXTURE))
+        controller.select_theme("windows-98")
+        snapshot = controller.create_baseline()
+        self.addCleanup(lambda: snapshot.baseline and snapshot.baseline.parent.exists() and __import__("shutil").rmtree(snapshot.baseline.parent))
+        controller.thread_id = "thr_1"; controller.turn_id = "turn_1"; controller.workflow.begin_agent_conversion()
+        self.bridge.emit("item_completed", {"params": {"threadId": "thr_1", "turnId": "turn_1", "item": {
+            "type": "agentMessage", "phase": "final_answer", "text": "Converted, but no structured result.",
+        }}})
+        self.bridge.emit("turn_completed", {"params": {"threadId": "thr_1", "turn": {"id": "turn_1"}}})
+        self.assertEqual(self.window.result, "review_required")
+        self.assertIn("did not match the required result schema", self.window.verification)
+
+    def test_structured_result_from_another_or_unidentified_turn_is_not_adopted(self) -> None:
+        result = {
+            "classification": "complete", "summary": "Other result", "changedFiles": [],
+            "reviewItems": [], "verificationPerformed": [], "verificationUnavailable": [],
+        }
+        self.controller.thread_id = "thr-active"; self.controller.turn_id = "turn-active"
+        for params in (
+            {"item": {"type": "agentMessage", "phase": "final_answer", "text": __import__("json").dumps(result)}},
+            {"threadId": "thr-other", "turnId": "turn-other", "item": {"type": "agentMessage", "phase": "final_answer", "text": __import__("json").dumps(result)}},
+        ):
+            self.bridge.emit("item_completed", {"params": params})
+        self.assertIsNone(self.controller._agent_result)
+        self.assertTrue(all("not used" in event["message"] for event in self.window.events[-2:]))
 
     def test_failed_authorized_target_command_is_not_hidden_by_cli_evidence(self) -> None:
         controller = self.controller

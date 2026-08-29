@@ -1,6 +1,6 @@
 {
   "manifest_schema_version": 1,
-  "skill_version": "2.0.0",
+  "skill_version": "2.0.1",
   "required_cli_api": {
     "min": 1,
     "max": 1

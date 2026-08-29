@@ -6,7 +6,9 @@ import os
 import subprocess
 import sys
 import tempfile
+from types import SimpleNamespace
 import unittest
+from unittest import mock
 from pathlib import Path
 
 os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
@@ -117,6 +119,32 @@ class GuiWidgetTests(unittest.TestCase):
             window = MainWindow(asset_root=Path(temp))
             self.assertIsNotNone(window.preview.pixmap())
             self.assertFalse(window.preview.pixmap().isNull())
+
+    def test_agent_event_view_retains_a_bounded_readable_tail(self) -> None:
+        window = MainWindow()
+        for identifier in range(525):
+            window.add_agent_event(AgentEvent("command", f"event {identifier}", "detail"))
+        self.assertEqual(window.event_list.count(), 500)
+        self.assertIn("event 25", window.event_list.item(0).text())
+        self.assertIn("event 524", window.event_list.item(499).text())
+
+    def test_normal_launch_schedules_an_automatic_codex_readiness_check(self) -> None:
+        from retro_web_ui_gui import app as gui_module
+
+        controller = SimpleNamespace(refresh_codex=mock.Mock())
+        window = SimpleNamespace(
+            controller=controller,
+            show=mock.Mock(),
+            set_codex_state=mock.Mock(),
+        )
+        application = SimpleNamespace(exec=mock.Mock(return_value=0))
+        with (
+            mock.patch.object(gui_module, "create_application", return_value=(application, window)),
+            mock.patch("PySide6.QtCore.QTimer.singleShot") as single_shot,
+        ):
+            self.assertEqual(gui_module.main([]), 0)
+        window.set_codex_state.assert_called_once()
+        single_shot.assert_called_once_with(0, controller.refresh_codex)
 
 
 if __name__ == "__main__":

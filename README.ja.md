@@ -16,7 +16,7 @@ Before/Afterを確認できます。OpenAI API keyの入力・保存は行わず
 
 [v2.0.0 release](https://github.com/ririri-rgb/retro-web-ui/releases/tag/v2.0.0)から
 macOS arm64 / Windows x86_64 / Linux x86_64用native archiveを取得できます。PythonとQtは同梱しますが、Codexは同梱しません。
-macOS版は検証済みad-hoc署名ですがnotarizeされておらず、Windows版はunsignedです。Linux版は通常のdesktop display stackと`libEGL`を必要とします。起動前にSHA-256を確認してください。
+macOS版は検証済みad-hoc署名ですがnotarizeされておらず、Windows版はunsignedです。公開v2.0.0 Linux版はGLIBC 2.38と通常のdesktop display stackを必要とします（2.0.1候補ではGLIBC 2.35以下をbuild gateにします）。起動前にSHA-256を確認してください。
 
 checkoutから起動する場合:
 
@@ -29,7 +29,7 @@ python3 -m venv .venv-gui
 Windowsでは`.venv-gui\Scripts\retro-web-ui-gui.exe`を使います。Codexが既にinstallされ、
 ChatGPTでsign in済みである必要があります。GUIはAPI keyを要求せず、local stdioの`codex app-server`を使います。
 公開済み`v1.1.0`はimmutableなGUI以前のCLI + Skill baselineです。詳細は
-[Desktop GUI architecture](docs/gui-architecture.md)と[GUI engineering report](docs/gui-validation-report.md)を参照してください。
+[Desktop GUI architecture](docs/gui-architecture.md)、[GUI engineering report](docs/gui-validation-report.md)、OS別の展開・署名境界・Codex診断・uninstallをまとめた[Desktop distribution guide](docs/distribution.md)を参照してください。
 
 変換前と4テーマの実描画結果は[英語README](README.md)冒頭で比較できます。5枚は同一HTML・同一JavaScriptを使っています。さらに、pinned TodoMVC、React/Vite、React/MUI/Emotion、Vue/Bootstrap、SvelteKit、Next App Router/Radix/Tailwind、およびpinned `naive-ui-admin`のlogin surfaceで、範囲を区別しながらsemantic変換を検証しています。
 

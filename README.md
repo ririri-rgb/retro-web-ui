@@ -28,7 +28,8 @@ Download the native archive for macOS arm64, Windows x86_64, or Linux x86_64 fro
 [v2.0.0 release](https://github.com/ririri-rgb/retro-web-ui/releases/tag/v2.0.0).
 Python and Qt are included; Codex remains an external prerequisite. The macOS
 archive has a verified ad-hoc signature but is not notarized, the Windows archive is unsigned, and
-the Linux archive requires a conventional desktop display stack plus `libEGL`.
+the public v2.0.0 Linux archive requires GLIBC 2.38 plus a conventional desktop
+display stack; the 2.0.1 candidate lowers and gates that baseline at GLIBC 2.35.
 Verify the adjacent SHA-256 file before opening an unsigned package.
 
 Run from a source checkout instead:
@@ -43,7 +44,9 @@ On Windows, use `.venv-gui\Scripts\retro-web-ui-gui.exe`. Codex must already be
 installed and signed in with ChatGPT; the GUI starts `codex app-server` locally
 over stdio and never asks for an API key. Published `v1.1.0` remains the
 immutable pre-GUI CLI + Skill baseline. See the [desktop architecture](docs/gui-architecture.md)
-and [v2 engineering evidence](docs/gui-validation-report.md).
+and [v2 engineering evidence](docs/gui-validation-report.md). Exact per-platform
+extraction, signing boundaries, Codex troubleshooting, and portable uninstall
+steps are in the [desktop distribution guide](docs/distribution.md).
 
 This is not a color preset and not a component library tied to React. The CLI makes repeatable inspection, behavior signals, theme assets, diagnostics, and verification evidence machine-readable. The Skill uses that evidence to choose a framework-aware integration strategy, map modern UI structures to desktop-era semantics, and perform the contextual/runtime/visual review that a deterministic tool cannot safely replace.
 

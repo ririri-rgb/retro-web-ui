@@ -1,23 +1,47 @@
 from __future__ import annotations
 
 import json
+import plistlib
 from pathlib import Path
 import tempfile
+from types import SimpleNamespace
 import unittest
 from unittest import mock
 
 from scripts.build_native import (
     archive_product,
+    BUNDLE_IDENTIFIER,
+    VERSION,
     find_product,
+    linux_abi_versions,
+    set_macos_bundle_metadata,
     sign_and_verify_macos_bundle,
     stage_product,
+    validate_archive_layout,
     validate_archive_licenses,
+    validate_archive_inventory,
+    verify_delivered_archive,
     verify_macos_archive_signature,
     write_checksum_file,
 )
 
 
 class NativePackagingTests(unittest.TestCase):
+    def test_macos_metadata_has_stable_identity_and_aligned_versions(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            bundle = Path(temporary) / "Retro Web UI GUI.app"
+            plist = bundle / "Contents" / "Info.plist"
+            plist.parent.mkdir(parents=True)
+            with plist.open("wb") as stream:
+                plistlib.dump({"CFBundleIdentifier": "Retro Web UI GUI"}, stream)
+
+            set_macos_bundle_metadata(bundle)
+
+            with plist.open("rb") as stream:
+                document = plistlib.load(stream)
+            self.assertEqual(document["CFBundleIdentifier"], BUNDLE_IDENTIFIER)
+            self.assertEqual(document["CFBundleShortVersionString"], document["CFBundleVersion"])
+
     def test_macos_bundle_is_resealed_and_strictly_verified(self) -> None:
         bundle = Path("/tmp/Retro Web UI GUI.app")
         with mock.patch("scripts.build_native.run") as runner:
@@ -77,15 +101,83 @@ class NativePackagingTests(unittest.TestCase):
 
                 staged, license_bundle = stage_product(product, root / "stage", system)
                 artifact = archive_product(staged, root / f"candidate{extension}", system)
+                validate_archive_layout(artifact, system)
                 validate_archive_licenses(artifact)
+                validate_archive_inventory(artifact, system)
 
                 self.assertIn("LGPL-3.0-only.txt", license_bundle)
+                self.assertTrue((staged / "INSTALL.md").is_file())
                 inventory = json.loads((staged / "LICENSES" / "NATIVE_COMPONENTS.json").read_text(encoding="utf-8"))
                 self.assertEqual(inventory["platform"], system)
                 self.assertEqual(
                     {entry["path"] for entry in inventory["files"]},
                     {"QtCore.dll", executable_name},
                 )
+
+    def test_archive_layout_rejects_traversal_and_case_insensitive_collisions(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            traversal = root / "traversal.zip"
+            with __import__("zipfile").ZipFile(traversal, "w") as archive:
+                archive.writestr("../outside", b"bad")
+            with self.assertRaisesRegex(RuntimeError, "unsafe member path"):
+                validate_archive_layout(traversal, "windows")
+
+            for system in ("windows", "macos"):
+                with self.subTest(system=system):
+                    collision = root / f"collision-{system}.zip"
+                    with __import__("zipfile").ZipFile(collision, "w") as archive:
+                        archive.writestr("Retro Web UI GUI/INSTALL.md", b"install")
+                        archive.writestr("Retro Web UI GUI/Readme.txt", b"one")
+                        archive.writestr("Retro Web UI GUI/README.TXT", b"two")
+                    with self.assertRaisesRegex(RuntimeError, "case-insensitive"):
+                        validate_archive_layout(collision, system)
+
+    def test_macos_archive_allows_ditto_metadata_only_outside_application_root(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            artifact = Path(temporary) / "mac.zip"
+            with __import__("zipfile").ZipFile(artifact, "w") as archive:
+                archive.writestr("Retro Web UI GUI/INSTALL.md", b"install")
+                archive.writestr(
+                    "Retro Web UI GUI/Retro Web UI GUI.app/Contents/MacOS/retro-web-ui-gui",
+                    b"exe",
+                )
+                archive.writestr("__MACOSX/Retro Web UI GUI/._INSTALL.md", b"metadata")
+            validate_archive_layout(artifact, "macos")
+
+    def test_exact_delivered_archive_is_extracted_and_smoked(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            artifact = root / "windows.zip"
+            with __import__("zipfile").ZipFile(artifact, "w") as archive:
+                archive.writestr("Retro Web UI GUI/retro-web-ui-gui.exe", b"native")
+            responses = [
+                SimpleNamespace(stdout=f"Retro Web UI GUI {VERSION}\n"),
+                SimpleNamespace(stdout=json.dumps({
+                    "status": "ok", "version": VERSION, "coreStatus": "ok",
+                    "manifestCompatible": True, "skillAvailable": True,
+                    "windowVisible": True, "appServer": "ready",
+                }) + "\n"),
+            ]
+            with mock.patch("scripts.build_native.run", side_effect=responses) as runner:
+                version, smoke = verify_delivered_archive(
+                    artifact, root / "extracted", "windows", app_server_smoke=True
+                )
+            self.assertEqual(version, f"Retro Web UI GUI {VERSION}")
+            self.assertEqual(smoke["appServer"], "ready")
+            self.assertIn("--app-server-smoke", runner.call_args_list[1].args[0])
+
+    def test_linux_abi_versions_are_derived_from_bundled_files(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            product = Path(temporary)
+            (product / "binary").write_bytes(b"\x7fELFfake")
+            (product / "documentation.txt").write_text("GLIBC_9.99", encoding="utf-8")
+            table = SimpleNamespace(stdout="GLIBC_2.17 GLIBC_2.35 GLIBCXX_3.4.29 CXXABI_1.3.13")
+            with mock.patch("scripts.build_native.run", return_value=table) as reader:
+                self.assertEqual(linux_abi_versions(product), {
+                    "glibc": "2.35", "glibcxx": "3.4.29", "cxxabi": "1.3.13",
+                })
+            self.assertEqual(reader.call_args.args[0][:3], ["readelf", "--version-info", "--wide"])
 
 
 if __name__ == "__main__":

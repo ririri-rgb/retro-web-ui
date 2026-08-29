@@ -239,6 +239,10 @@ class CoreFacade:
     def theme_list(self) -> CliResponse:
         return self._run(("theme", "list"))
 
+    def theme_bundle(self, theme: str) -> CliResponse:
+        """Return the canonical deterministic bundle without writing a target file."""
+        return self._run(("theme", "bundle", theme))
+
     def snapshot(self, root: Path | str, output: Path | str) -> CliResponse:
         project = self.project_root(root)
         destination = Path(output).expanduser()

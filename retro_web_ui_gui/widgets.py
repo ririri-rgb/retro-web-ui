@@ -420,6 +420,7 @@ class MainWindow(QMainWindow):
 
     def set_codex_state(self, state: str, message: str) -> None:
         labels = {
+            "checking": "Checking Codex",
             "ready": "Codex ready",
             "auth_required": "Sign in required",
             "unavailable": "Codex unavailable",
@@ -494,6 +495,8 @@ class MainWindow(QMainWindow):
         item = QListWidgetItem(f"[{event.kind}] {event.message}")
         item.setToolTip(event.detail or event.message)
         self.event_list.addItem(item)
+        while self.event_list.count() > 500:
+            self.event_list.takeItem(0)
         self.event_list.scrollToBottom()
 
     def request_approval(self, request: ApprovalRequest | Mapping[str, str]) -> bool:

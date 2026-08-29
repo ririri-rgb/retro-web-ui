@@ -210,6 +210,40 @@ class ConversionWorkflow:
             self.classification = ResultClassification.VERIFICATION_FAILED
         return self.snapshot()
 
+    def apply_agent_assessment(self, assessment: Optional[dict[str, Any]]) -> WorkflowSnapshot:
+        """Merge semantic review evidence without letting it override harder failures.
+
+        Deterministic verification cannot prove visual/runtime completeness.  A
+        missing or review-bearing structured Codex result therefore downgrades
+        an otherwise complete run, while deterministic behavior/build failures
+        always remain authoritative.
+        """
+        if self.classification in {
+            ResultClassification.VERIFICATION_FAILED,
+            ResultClassification.BEHAVIOR_INCOMPATIBILITY,
+            ResultClassification.AGENT_INTERRUPTED,
+        }:
+            return self.snapshot()
+        if not isinstance(assessment, dict):
+            self.state = WorkflowState.REVIEW_REQUIRED
+            self.classification = ResultClassification.REVIEW_REQUIRED
+            return self.snapshot()
+        declared = str(assessment.get("classification") or "review_required")
+        review_items = assessment.get("reviewItems")
+        unavailable = assessment.get("verificationUnavailable")
+        has_review_items = isinstance(review_items, list) and any(str(item).strip() for item in review_items)
+        has_unavailable = isinstance(unavailable, list) and any(str(item).strip() for item in unavailable)
+        if declared == "unsupported":
+            self.state = WorkflowState.REVIEW_REQUIRED
+            self.classification = ResultClassification.UNSUPPORTED
+        elif declared == "review_required":
+            self.state = WorkflowState.REVIEW_REQUIRED
+            self.classification = ResultClassification.REVIEW_REQUIRED
+        elif declared == "complete_with_review_items" or has_review_items or has_unavailable:
+            self.state = WorkflowState.REVIEW_REQUIRED
+            self.classification = ResultClassification.COMPLETE_WITH_REVIEW_ITEMS
+        return self.snapshot()
+
     def mark_behavior_incompatible(self, diagnostics: Optional[list[dict[str, Any]]] = None) -> WorkflowSnapshot:
         """Record a confirmed runtime/contract behavior failure after review."""
         return self._fail(

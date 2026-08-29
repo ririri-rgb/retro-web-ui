@@ -24,6 +24,13 @@ class CoreFacadeTests(unittest.TestCase):
         self.assertEqual(response.document["schema_version"], 1)
         self.assertTrue(self.facade.skill_path.is_file())
 
+    def test_theme_bundle_is_read_from_the_canonical_cli_contract(self) -> None:
+        response = self.facade.theme_bundle("windows-xp")
+        self.assertEqual(response.status, "ok")
+        self.assertEqual(response.result["theme"], "windows-xp")
+        self.assertIn("data-retro-theme", response.result["css"])
+        self.assertEqual(len(response.result["bundle_sha256"]), 64)
+
     def test_explicit_cli_path_retains_process_isolation_route(self) -> None:
         facade = CoreFacade(cli_path=ROOT / "skills" / "retro-web-ui" / "scripts" / "retro_web_ui.py")
         response = facade.info()
@@ -106,3 +113,27 @@ class WorkflowTests(unittest.TestCase):
         result = workflow.mark_behavior_incompatible([{"code": "RUNTIME_REGRESSION"}])
         self.assertEqual(result.state, WorkflowState.BEHAVIOR_INCOMPATIBILITY)
         self.assertEqual(result.classification, ResultClassification.BEHAVIOR_INCOMPATIBILITY)
+
+    def test_agent_review_evidence_downgrades_deterministic_complete(self) -> None:
+        workflow = ConversionWorkflow(CoreFacade())
+        workflow.prepare(FIXTURES / "static-html")
+        workflow.select_theme("windows-98")
+        baseline = workflow.create_baseline()
+        self.addCleanup(lambda: baseline.baseline and baseline.baseline.parent.exists() and __import__("shutil").rmtree(baseline.baseline.parent))
+        workflow.begin_agent_conversion()
+        self.assertEqual(workflow.verify().classification, ResultClassification.COMPLETE)
+
+        reviewed = workflow.apply_agent_assessment({
+            "classification": "complete",
+            "reviewItems": [],
+            "verificationUnavailable": ["Browser-based visual review was unavailable."],
+        })
+        self.assertEqual(reviewed.state, WorkflowState.REVIEW_REQUIRED)
+        self.assertEqual(reviewed.classification, ResultClassification.COMPLETE_WITH_REVIEW_ITEMS)
+
+    def test_missing_agent_assessment_fails_closed_but_cannot_mask_harder_failure(self) -> None:
+        workflow = ConversionWorkflow(CoreFacade())
+        workflow.classification = ResultClassification.COMPLETE
+        self.assertEqual(workflow.apply_agent_assessment(None).classification, ResultClassification.REVIEW_REQUIRED)
+        workflow.classification = ResultClassification.VERIFICATION_FAILED
+        self.assertEqual(workflow.apply_agent_assessment(None).classification, ResultClassification.VERIFICATION_FAILED)

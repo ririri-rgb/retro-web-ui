@@ -353,8 +353,20 @@ def doctor_from_analysis(root: Path, analysis: dict[str, Any]) -> tuple[dict[str
             ))
     manifest, manifest_diagnostics, compatible = check_manifest(skill_root() / "manifest.json")
     diagnostics.extend(manifest_diagnostics)
+    python_path = Path(sys.executable)
+    python_name = python_path.stem.lower()
+    python_runnable = (
+        python_path.is_file()
+        and os.access(python_path, os.X_OK)
+        and python_name.startswith(("python", "pypy"))
+    )
     return {
-        "python": {"version": list(sys.version_info[:3]), "executable": sys.executable},
+        "python": {
+            "version": list(sys.version_info[:3]),
+            "executable": sys.executable,
+            "runnable": python_runnable,
+            "runtime_kind": "interpreter" if python_runnable else "embedded",
+        },
         "git": git_result,
         "package_managers": manager_status,
         "selection": analysis["selection"],

@@ -151,6 +151,13 @@ def main(argv: list[str] | None = None) -> int:
         window.close()
         print(json.dumps(result, ensure_ascii=False, sort_keys=True))
         return 0
+    from PySide6.QtCore import QTimer
+
+    window.set_codex_state(
+        "checking",
+        "Checking the installed Codex launcher, App Server, ChatGPT sign-in, and available models…",
+    )
+    QTimer.singleShot(0, window.controller.refresh_codex)
     return app.exec()
 
 

@@ -338,9 +338,17 @@ class UnifiedCLITests(unittest.TestCase):
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertEqual(document["schema_version"], 1)
         self.assertEqual(document["tool"]["name"], "retro-web-ui")
-        self.assertEqual(document["tool"]["version"], "2.0.0")
+        self.assertEqual(document["tool"]["version"], (ROOT / "VERSION").read_text(encoding="utf-8").strip())
         self.assertTrue(document["result"]["manifest_compatible"])
         self.assertEqual(len(document["result"]["theme_bundle_sha256"]), 4)
+
+    def test_doctor_distinguishes_a_runnable_interpreter_from_an_embedded_runtime(self):
+        result, document = self.run_cli("doctor", str(FIXTURES / "static-html"), "--json")
+        self.assertEqual(result.returncode, 0, result.stderr)
+        python = document["result"]["python"]
+        self.assertIsInstance(python["runnable"], bool)
+        self.assertIn(python["runtime_kind"], {"interpreter", "embedded"})
+        self.assertEqual(python["runtime_kind"] == "interpreter", python["runnable"])
 
     def test_manifest_mismatch_is_contract_error(self):
         with tempfile.TemporaryDirectory() as temp:
@@ -566,10 +574,14 @@ class RepositoryTests(unittest.TestCase):
         manifest = json.loads((SKILL / "manifest.json").read_text(encoding="utf-8"))
         contracts = (SCRIPTS / "contracts.py").read_text(encoding="utf-8")
         pyproject = (ROOT / "pyproject.toml").read_text(encoding="utf-8")
-        self.assertEqual((ROOT / "VERSION").read_text(encoding="utf-8").strip(), "2.0.0")
-        self.assertEqual(manifest["skill_version"], "2.0.0")
-        self.assertIn('TOOL_VERSION = "2.0.0"', contracts)
-        self.assertIn('version = "2.0.0"', pyproject)
+        version = (ROOT / "VERSION").read_text(encoding="utf-8").strip()
+        self.assertEqual(manifest["skill_version"], version)
+        self.assertIn(f'TOOL_VERSION = "{version}"', contracts)
+        self.assertIn(f'version = "{version}"', pyproject)
+        self.assertEqual(json.loads((ROOT / "package.json").read_text(encoding="utf-8"))["version"], version)
+        self.assertEqual(json.loads((ROOT / "package-lock.json").read_text(encoding="utf-8"))["version"], version)
+        gui_init = (ROOT / "retro_web_ui_gui" / "__init__.py").read_text(encoding="utf-8")
+        self.assertIn(f'__version__ = "{version}"', gui_init)
 
 
 if __name__ == "__main__":
