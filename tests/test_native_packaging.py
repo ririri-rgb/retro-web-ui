@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import hashlib
 import json
 import plistlib
 from pathlib import Path
@@ -22,6 +23,7 @@ from scripts.build_native import (
     validate_archive_inventory,
     verify_delivered_archive,
     verify_macos_archive_signature,
+    write_component_inventory,
     write_checksum_file,
 )
 
@@ -54,6 +56,27 @@ class NativePackagingTests(unittest.TestCase):
                 ["codesign", "--verify", "--deep", "--strict", "--verbose=2", str(bundle)],
             ],
         )
+
+    def test_macos_inventory_can_be_refreshed_after_signing_mutates_executable(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            application = root / "Retro Web UI GUI.app"
+            executable = application / "Contents" / "MacOS" / "retro-web-ui-gui"
+            executable.parent.mkdir(parents=True)
+            executable.write_bytes(b"unsigned")
+            inventory_path = root / "NATIVE_COMPONENTS.json"
+
+            write_component_inventory(application, inventory_path, "macos")
+            executable.write_bytes(b"signed")
+            write_component_inventory(application, inventory_path, "macos")
+
+            inventory = json.loads(inventory_path.read_text(encoding="utf-8"))
+            launcher = next(entry for entry in inventory["files"] if entry["path"] == "Contents/MacOS/retro-web-ui-gui")
+            self.assertEqual(launcher["bytes"], len(b"signed"))
+            self.assertEqual(
+                launcher["sha256"],
+                hashlib.sha256(b"signed").hexdigest(),
+            )
 
     def test_macos_archive_is_reextracted_before_signature_verification(self) -> None:
         artifact = Path("/tmp/retro-web-ui-gui-2.0.0-macos-arm64.zip")

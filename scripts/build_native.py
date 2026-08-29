@@ -129,6 +129,18 @@ def component_inventory(product: Path) -> list[dict[str, object]]:
     return inventory
 
 
+def write_component_inventory(product: Path, destination: Path, system: str) -> None:
+    """Write the inventory from the exact product bytes that will be archived."""
+    inventory = {
+        "schemaVersion": 1,
+        "application": "Retro Web UI GUI",
+        "version": VERSION,
+        "platform": system,
+        "files": component_inventory(product),
+    }
+    destination.write_text(json.dumps(inventory, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+
+
 def stage_product(product: Path, directory: Path, system: str) -> tuple[Path, list[str]]:
     root = directory / ("retro-web-ui-gui" if system == "linux" else "Retro Web UI GUI")
     root.mkdir(parents=True)
@@ -149,16 +161,7 @@ def stage_product(product: Path, directory: Path, system: str) -> tuple[Path, li
     shutil.copy2(ROOT / "LICENSE", licenses / "PROJECT-LICENSE.txt")
     shutil.copy2(ROOT / "THIRD_PARTY_NOTICES.md", licenses / "THIRD_PARTY_NOTICES.md")
     shutil.copy2(ROOT / "distribution" / "INSTALL.md", root / "INSTALL.md")
-    inventory = {
-        "schemaVersion": 1,
-        "application": "Retro Web UI GUI",
-        "version": VERSION,
-        "platform": system,
-        "files": component_inventory(product),
-    }
-    (licenses / "NATIVE_COMPONENTS.json").write_text(
-        json.dumps(inventory, indent=2, sort_keys=True) + "\n", encoding="utf-8"
-    )
+    write_component_inventory(product, licenses / "NATIVE_COMPONENTS.json", system)
     return root, sorted(path.name for path in licenses.iterdir() if path.is_file())
 
 
@@ -554,7 +557,16 @@ def main() -> int:
         extension = ".tar.gz" if system == "linux" else ".zip"
         staged_root, license_bundle = stage_product(product, work / "archive", system)
         if system == "macos":
-            sign_and_verify_macos_bundle(staged_root / "Retro Web UI GUI.app")
+            staged_application = staged_root / "Retro Web UI GUI.app"
+            sign_and_verify_macos_bundle(staged_application)
+            # codesign mutates Mach-O bytes. Inventory the sealed application,
+            # while keeping the inventory outside the signed bundle to avoid a
+            # signature/inventory hash cycle.
+            write_component_inventory(
+                staged_application,
+                staged_root / "LICENSES" / "NATIVE_COMPONENTS.json",
+                system,
+            )
         artifact = archive_product(
             staged_root,
             output / f"retro-web-ui-gui-{VERSION}-{system}-{machine}{extension}",
