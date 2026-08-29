@@ -105,7 +105,10 @@ class _FakeProcess:
 class CodexBridgeTests(unittest.TestCase):
     def setUp(self) -> None:
         self.process = _FakeProcess()
-        self.bridge = CodexBridge(process_factory=lambda *args, **kwargs: self.process)
+        self.bridge = CodexBridge(
+            executable=sys.executable,
+            process_factory=lambda *args, **kwargs: self.process,
+        )
 
     def tearDown(self) -> None:
         self.bridge.shutdown(wait_seconds=0)
@@ -471,7 +474,10 @@ class CodexBridgeTests(unittest.TestCase):
         self.bridge.shutdown(wait_seconds=0)
         first, second = _FakeProcess(), _FakeProcess()
         processes = [first, second]
-        bridge = CodexBridge(process_factory=lambda *args, **kwargs: processes.pop(0))
+        bridge = CodexBridge(
+            executable=sys.executable,
+            process_factory=lambda *args, **kwargs: processes.pop(0),
+        )
         try:
             thread, result = self._request_in_thread(bridge.start)
             for _ in range(100):
