@@ -31,7 +31,7 @@ class WindowsJunctionIntegrationTests(unittest.TestCase):
             check=False,
         )
         if completed.returncode:
-            raise unittest.SkipTest(f"real junction creation unavailable: {completed.stderr or completed.stdout}")
+            raise AssertionError(f"real junction creation failed: {completed.stderr or completed.stdout}")
 
     def make_store(self):
         root = self.base / "workspace"
@@ -58,8 +58,17 @@ class WindowsJunctionIntegrationTests(unittest.TestCase):
                     "artifacts": store._artifact_dir(project.project_id, session.session_id),
                 }
                 target = targets[boundary]
-                intended = store._artifact_dir(project.project_id, session.session_id) / "escape.bin"
-                relative_escape = intended.relative_to(target)
+                relative_escape = {
+                    "root": Path(
+                        "projects", project.project_id, "sessions", session.session_id, "artifacts", "escape.bin"
+                    ),
+                    "projects": Path(
+                        project.project_id, "sessions", session.session_id, "artifacts", "escape.bin"
+                    ),
+                    "project": Path("sessions", session.session_id, "artifacts", "escape.bin"),
+                    "session": Path("artifacts", "escape.bin"),
+                    "artifacts": Path("escape.bin"),
+                }[boundary]
                 outside = case / f"outside-{boundary}"
                 target.rename(outside)
                 self.junction(target, outside)
