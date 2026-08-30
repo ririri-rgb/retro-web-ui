@@ -147,10 +147,11 @@ or every Linux desktop configuration.
 
 | Evidence | macOS arm64 | Windows x86_64 | Linux x86_64 |
 | --- | --- | --- | --- |
-| Public v2.0.0 archive/checksum inspected | yes | yes | yes |
-| Public archive independently extracted | yes | yes | yes |
-| Public GUI launch | physical desktop from archive | build-tree native CI only | build-tree offscreen CI only |
-| Real Codex/App Server from public archive | yes | no; build-tree CI only | no; build-tree CI only |
+| Public v2.0.0 baseline archive/checksum inspected | yes | yes | yes |
+| Public v2.0.1 archive/checksum downloaded and verified | yes | yes | yes |
+| Public v2.0.1 archive independently extracted | yes | archive contract verified in release CI | archive contract verified in release CI |
+| Public v2.0.1 GUI launch | physical desktop from archive | final-archive native CI only | final-archive offscreen CI only |
+| Real Codex/App Server from public v2.0.1 archive | yes | no; final-archive CI only | no; final-archive CI only |
 | Real Codex conversion from public archive | yes | not physically exercised | not physically exercised |
 | OS signing/reputation acceptance | ad-hoc only; not notarized | unsigned; no physical SmartScreen evidence | not applicable |
 | Physical desktop coverage | current macOS host | unavailable | X11/Wayland unavailable |

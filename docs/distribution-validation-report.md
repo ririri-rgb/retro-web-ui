@@ -5,14 +5,42 @@ Date: 2026-08-30
 Candidate commit: `b1ef3a3f8eb38a4a2faee7550dfc6ddd5be4842b` for product code,
 with test-only isolation at `39663c16b16e1e1e03404c3e9cb8be01d9992468`
 
-Status: pre-publication validation completed; v2.0.1 publication approved
+Release commit: `5d56fc942dc2485cd3126920a79d1f8f8371d7af`
 
-This pre-publication report supplements the [desktop GUI engineering report](gui-validation-report.md).
+Status: v2.0.1 published and independently verified from public downloads
+
+This release report supplements the [desktop GUI engineering report](gui-validation-report.md).
 It covers installation and distribution failures found by replaying the public
 v2.0.0 artifacts and then exercising the hardened v2.0.1 candidate exactly as an
 end user receives it. At the start of this validation, the public `v2.0.0`
 release and `main` pointed to `7f7e3007ea3230ed65b748ea9b6527fa71794045`;
 the existing `v2.0.0` tag was never rewritten.
+
+## Post-publication verification
+
+[Release workflow 33281838715](https://github.com/ririri-rgb/retro-web-ui/actions/runs/33281838715)
+completed successfully for tag `v2.0.1`. The annotated tag and `main` both
+resolved to release commit `5d56fc942dc2485cd3126920a79d1f8f8371d7af` at
+publication. GitHub published the release as latest, non-draft, and
+non-prerelease; the immutable `v2.0.0` release remained available unchanged.
+
+All 15 public release assets were downloaded into a fresh directory from the
+[v2.0.1 release](https://github.com/ririri-rgb/retro-web-ui/releases/tag/v2.0.1).
+Each of the six adjacent SHA-256 manifests independently verified its public
+archive or package. The three public native reports matched the archive names,
+versions, sizes, and digests below:
+
+| Platform | Compressed bytes | Expanded bytes | Public SHA-256 | Signing / ABI |
+| --- | ---: | ---: | --- | --- |
+| macOS arm64 | 28,838,926 | 82,570,032 | `10b688f01e5f6efb155e49226f693ef6cbb3e279e953d3a1a94d50d875963902` | strict ad-hoc signature re-verified after public download |
+| Windows x86_64 | 29,899,318 | 75,621,430 | `763c615275831db8b0fe42df29edcc3f026df1b9a00b54038d2909157db449af` | unsigned |
+| Linux x86_64 | 58,793,564 | 153,852,098 | `350d8f9ea494d99201c92e5a31926febc6dcd67c6d58118fc437d2e6b79ac98e` | GLIBC 2.35, GLIBCXX 3.4.29, CXXABI 1.3.13 |
+
+The independently downloaded macOS application passed
+`codesign --verify --deep --strict`, reported `Retro Web UI GUI 2.0.1`, created
+a visible GUI window, loaded the matching bundled Core and Skill, found Codex
+CLI `0.150.0-alpha.8`, reused the host's existing ChatGPT account, and
+initialized the user's local App Server without an application-owned API key.
 
 ## Architecture and scope
 
@@ -207,10 +235,9 @@ coverage. The remaining gaps are explicitly bounded signing, physical-platform,
 installer, and target-specific runtime issues rather than unresolved
 cross-cutting ownership defects.
 
-**Release decision: approved for v2.0.1 publication.** The selected version is
+**Release decision: v2.0.1 published and independently verified.** The selected version is
 `v2.0.1`, because the candidate is a backward-compatible security,
 classification, startup, and distribution-hardening patch over v2.0.0 rather
-than a new product boundary. The immutable tag workflow must rebuild every
-artifact and the resulting public downloads must be independently verified.
-Tag creation and publication results are recorded by GitHub rather than
-back-filled into this pre-publication report.
+than a new product boundary. The immutable tag workflow rebuilt every artifact,
+and the resulting public downloads passed the independent verification recorded
+above.
