@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import os
 from pathlib import Path
 import tempfile
 import unittest
@@ -17,8 +16,10 @@ class WorkspaceLifecycleSmokeTests(unittest.TestCase):
             project = base / "project"
             (project / "app").mkdir(parents=True)
             state = base / "state"
-            environment = {"XDG_STATE_HOME": str(state)}
-            with mock.patch.dict(os.environ, environment, clear=True), mock.patch("retro_web_ui_gui.workspace.sys.platform", "linux"):
+            with mock.patch(
+                "retro_web_ui_gui.workspace_smoke.default_workspace_root",
+                return_value=state / "retro-web-ui",
+            ):
                 created = create_workspace_lifecycle(project)
                 root = Path(created["workspaceRoot"])
                 restarted = WorkspaceStore(root)
