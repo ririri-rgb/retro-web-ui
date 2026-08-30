@@ -1,6 +1,6 @@
 # Phase C GUI workspace validation report
 
-Evidence date: 2026-08-30.
+Evidence closed: 2026-08-31 JST.
 
 ## 1. Baseline
 
@@ -8,13 +8,16 @@ Evidence date: 2026-08-30.
 - Public tag commit: `5d56fc9` (`docs: finalize v2.0.1 release metadata`).
 - Candidate branch: `codex/retro-web-ui-desktop-gui`.
 - Inspected working baseline: `775903578a91a0e92828d729b733de122e2d0ad3`, one documentation commit after the public tag and equal to `origin/main` at inspection time.
-- Candidate commit: not assigned at the time this report was written. The validated candidate is the reviewable working tree described here; no tag or release was created.
+- Validated source candidate: `dd34ee81dda96322e40de4e3d2fe2355ebda8a7d`.
+- Fresh CI: [run 33340040216](https://github.com/ririri-rgb/retro-web-ui/actions/runs/33340040216).
+- Fresh native artifacts: [run 33340045460](https://github.com/ririri-rgb/retro-web-ui/actions/runs/33340045460).
 
 The published `v2.0.1` archives are immutable and do not contain this workspace.
 
-This implementation report is now being extended by the Phase C
-cross-platform release-validation loop. Candidate-level CI/native evidence is
-not attributed until the working tree is committed and the exact SHA is run.
+No version, tag, release, `main` merge, or published artifact was created or
+changed. All candidate-level claims below refer to the exact source commit
+above; earlier failed/intermediate runs are retained only as failure-driven
+history and are not counted as final evidence.
 
 ## 2. Architecture
 
@@ -106,13 +109,15 @@ states to `transport_lost`; recorded terminal outcomes remain terminal.
 | Session comparison could leave unrelated screenshots visible | presentation | Text changed but Before/After did not reset | Clear visual comparison when byte-level session comparison opens | controller comparison behavior |
 | History selection could overwrite active review | presentation | Session list remained interactive while busy | Disable project/session history, comparison, and recovery during a live turn | native Qt busy-state regression |
 | Read-only application-data directory prevented GUI startup | composition | Workspace initialization was mandatory | Start with `workspace=None` and a persistent diagnostic | native Qt degradation test |
-| Windows junction could evade a POSIX-style symlink test | persistence/security | `Path.is_symlink()` does not cover every Windows reparse point | Treat `FILE_ATTRIBUTE_REPARSE_POINT` as link-like at workspace, app, and artifact boundaries | synthetic reparse-attribute regression; fresh Windows junction test remains a release gate |
+| Windows junction could evade a POSIX-style symlink test | persistence/security | `Path.is_symlink()` does not cover every Windows reparse point | Treat `FILE_ATTRIBUTE_REPARSE_POINT` as link-like at workspace, app, and artifact boundaries | synthetic reparse-attribute regression plus real `mklink /J` replacement at root/projects/project/session/artifacts on Windows Server 2025 |
 | Interrupt transport failure left uncertain remote work and a locked GUI | controller/App Server | Cancel delegated directly to a failing bridge call | Mark transport lost, disable new start, unlock presentation, and require explicit status recovery | interrupt-transport regression |
 | Directory `fsync` could report failure after a successful replace | persistence/portability | Some Windows/mounted filesystems do not support directory fsync | Keep file fsync/replace mandatory; make only directory fsync best effort | unsupported-directory-fsync regression |
-| Initialized Workspace root could be replaced with a link and redirect later writes | persistence/security | Only leaf project/session/artifact paths were rechecked | Pin root/projects directory identity and revalidate both before every storage traversal | real macOS symlink escape reproduction followed by outside-write rejection regression; real Windows junction replay pending |
+| Initialized Workspace root could be replaced with a link and redirect later writes | persistence/security | Only leaf project/session/artifact paths were rechecked | Pin root/projects directory identity and revalidate both before every storage traversal | real macOS symlink escape reproduction followed by outside-write rejection regression; real Windows junction replay passed |
 | A final `project.json` or `session.json` link could be followed | persistence/security | Record JSON used an unbounded path-level text read | Use bounded regular-file descriptor reads and reject the final link/reparse object | external session-record symlink regression |
 | Basic/Digest authorization, login URLs, and device codes could survive inside allowed prose | privacy | Redaction covered bearer/JWT/query/cookie/private-key shapes but not all labeled credentials | Centralize free-text redaction for authorization headers, labeled secrets, login URLs, device/user codes, and credential URLs | expanded persisted-JSON privacy regression plus native lifecycle privacy scan |
 | Browser/App Server smokes initially failed under the wrong host boundary | validation environment | Local Chrome and App Server were invoked in a restricted context | Re-run with the installed absolute Chrome and authorized local App Server boundary | structured App Server smoke and Chrome CDP passes |
+| First fresh Windows GUI job failed before its junction gate | test isolation | The lifecycle test cleared all environment variables and mocked only `sys.platform`, creating a contradictory Windows `os.name`/Linux platform state with no home directory | Inject a temporary lifecycle workspace root directly; keep platform-root selection in its pure cross-platform tests | local full suite and second fresh Windows GUI suite passed the lifecycle test |
+| Second fresh Windows junction job failed before creating a junction | integration-test portability | NTFS temporary paths used equivalent short (`RUNNER~1`) and long (`runneradmin`) spellings, while the test derived an escape suffix with lexical `Path.relative_to()` | Derive the expected suffix from the logical workspace schema and make junction-creation failure a hard failure rather than a skip | final Windows job created real junctions and passed all five boundary replacements |
 | TodoMVC build was initially unavailable | real target environment | Pinned checkout had no dependencies | Bounded isolated npm cache/install in the disposable checkout | webpack build pass in 1.5 s |
 | Todo creation still did not fire | upstream real target | Pinned app binds creation to a `change` path not triggered by Enter/blur automation | Preserve and report the pre-existing baseline limitation; do not call it a conversion pass | current browser replay plus prior pinned baseline record |
 
@@ -122,11 +127,10 @@ there is no released older workspace schema to migrate.
 
 ## 6. Validation scale
 
-- Full Python discovery: 148 tests discovered, with 140 passes and eight
-  intentional Qt/Windows skips in the CLI-only macOS interpreter; after installing no new
-  GUI dependency, the existing
-  PySide6 6.11.2 environment ran the 89 GUI/controller/workspace/bridge/workflow
-  tests with zero skips and zero failures.
+- Full local Python discovery on the final source candidate: 148 tests, 140
+  passes and eight intentional Qt/Windows skips in the CLI-only macOS
+  interpreter. The existing PySide6 6.11.2 environment ran the 89
+  GUI/controller/workspace/bridge/workflow tests with zero skips and failures.
 - Workspace persistence tests: 24 plus one native-lifecycle smoke, covering canonical identity, lifecycle,
   restart, corruption, schema isolation, permissions, artifact bounds,
   traversal, tampering, comparison, and privacy.
@@ -137,7 +141,14 @@ there is no released older workspace schema to migrate.
   accessibility names, bounded event history, and persistence degradation.
 - Existing packaging, Core/CLI/Skill, theme, behavior guard, and archive tests
   remained in the 148-test discovery run.
-- Chrome: showcase + React production interaction passed; MUI/Emotion,
+- Fresh CI matrix on the final source candidate: Linux, macOS, and Windows CLI
+  portability; Linux, macOS, and Windows GUI portability; Python and GUI
+  minimum-version jobs; repository validation. All nine jobs passed.
+- Real Windows junction gate: Windows Server 2025 created NTFS junctions with
+  `cmd /c mklink /J` and replaced each of the initialized root, projects,
+  project, session, and artifacts directories. Every write and integrity read
+  failed closed; no outside write was accepted. Junction creation cannot skip.
+- Chrome/CI browser: showcase + React production interaction passed; MUI/Emotion,
   Vue/Bootstrap, SvelteKit, and Next/Radix external CDP interactions passed.
 - Fixture builds: all five existing framework fixtures passed earlier in this
   candidate loop. Repository validator, npm production audit, CLI clean-install
@@ -180,13 +191,14 @@ outline, desktop computed width 526 px, and at 390 x 844 a 380 px window with no
 horizontal overflow and wrapped status layout. Todo creation remained blocked
 by the known upstream baseline event behavior and is not claimed as passed.
 
-A separate working-tree recovery probe checkpointed a real Terra-medium thread
+A separate final-candidate recovery probe checkpointed a real Terra-medium thread
 and turn, terminated the local Codex App Server process, created a fresh
 transport, resumed and read the same durable thread, verified its server cwd,
 and classified the returned `interrupted` turn as
-`interrupted_recoverable`. The workspace privacy scan was clean. This proves
-the recovery path locally, but it must be rerun after a candidate SHA is fixed
-before it becomes candidate-level evidence.
+`interrupted_recoverable`. It reported candidate commit
+`dd34ee81dda96322e40de4e3d2fe2355ebda8a7d`, candidate clean, binding verified,
+fresh transport, and a clean workspace privacy scan. This is real local App
+Server evidence, separate from the deterministic native lifecycle probe.
 
 ## 8. Security and privacy
 
@@ -200,8 +212,8 @@ before it becomes candidate-level evidence.
 - Project/application paths are canonicalized; application and artifact
   containment rejects traversal, symlinks, and link-like Windows reparse
   points. Project/session path components are canonical UUIDs bound back to
-  their record directories. Current Windows coverage for reparse points is
-  synthetic; a real junction replay remains required before release.
+  their record directories. Windows reparse coverage includes both synthetic
+  attribute tests and the fresh real-junction CI gate described above.
 - POSIX directories/files are best-effort `0700`/`0600`. Windows relies on the
   user's inherited application-data ACL; no stronger ACL claim is made.
 - Codex writes remain limited to the exact selected application with network
@@ -220,21 +232,37 @@ webpack build took about 1.5 s; its isolated `node_modules` used about 63.6 MiB
 and npm cache about 12.1 MiB. These are observations from one macOS arm64 run,
 not general performance guarantees.
 
-## 10. Cross-platform evidence
+## 10. Cross-platform and artifact evidence
 
-**Actual working-tree evidence (candidate SHA not yet assigned):** macOS 26.5.2 arm64, Python 3.12.13,
-PySide6 6.11.2, Node 25.9.0, npm 11.12.1; native Qt offscreen rendering, real
-Codex App Server conversion/restart, Chrome and in-app-browser interaction.
+| Environment | Evidence class | Fresh final-candidate result |
+| --- | --- | --- |
+| macOS arm64 local host | native/offscreen plus real local App Server and installed Chrome | local 148-test discovery, PySide6 suite, candidate native build, browser/framework interaction, and real process-loss recovery passed |
+| GitHub macOS arm64 | hosted runner, native executable, offscreen display | extracted archive started; Core/manifest/Skill/App Server/window checks passed; workspace `running` -> restart -> `transport_lost`, history 1/1, artifact integrity and privacy clean |
+| GitHub Linux x86_64 | hosted runner, native executable, offscreen display | same lifecycle/startup checks passed; Linux ABI floor recorded as glibc 2.35, GLIBCXX 3.4.29, CXXABI 1.3.13 |
+| GitHub Windows x86_64 | hosted runner, native executable, offscreen display | same lifecycle/startup checks passed; separate real NTFS junction containment gate passed at all five storage boundaries |
+| Unit/static | synthetic | path-root decisions, reparse attributes, permissions branches, traversal, record links, corrupt/new schema, retention, privacy, and recovery state regressions passed |
 
-**CI-only design/evidence:** the workflow now includes `test_workspace` in the
-existing GUI portability job and adds an Ubuntu/Python 3.9 GUI minimum job.
-Windows x86_64 and Linux x86_64 paths, default
-workspace locations, archive logic, and POSIX/Windows branches have unit/static
-coverage, but this candidate has not yet produced a fresh three-OS CI run.
+All three downloaded final-candidate native reports recorded exact commit
+`dd34ee81dda96322e40de4e3d2fe2355ebda8a7d` and `candidateClean: true`.
+Sidecar SHA-256 files matched the downloaded archives:
 
-**Physical-machine evidence:** no new physical Windows or Linux run was
-performed for Phase C. Published `v2.0.1` has earlier three-OS distribution
-evidence, but it cannot be relabeled as validation of the new workspace.
+- Linux x86_64: `a97d086fd785f69d4233a424f5b8e999824ff47ed619881ebc5f00303e3ffc5d`.
+- macOS arm64: `5431e04b4cf2d6472699612dec26ff93e58629fe7d2ce1d429932a2b0a544019`.
+- Windows x86_64: `505d2784cc020bfdcce852a86d34c41fa07c0a85f54db69b79b9ec0dc772e45a`.
+
+Independent archive inspection validated all payloads and found zero absolute
+or parent-traversal names and zero symlink entries (165 Linux, 166 macOS, and
+91 Windows entries). Each extracted program reported version 2.0.1, Codex
+external/not bundled, App Server ready, Core okay, manifest compatible, Skill
+available, and a visible offscreen window. The deterministic lifecycle used
+the platform-appropriate isolated workspace location, restored one project and
+one session, preserved the artifact SHA
+`28676b83b17fb426082c08c636b17187a7e952836d6c41402e8cb29662438854`,
+and reported privacy clean.
+
+No fresh user-owned physical Windows or Linux workstation test was performed.
+The hosted runners are labeled hosted/native/offscreen, not physical-machine
+evidence. Published `v2.0.1` evidence is not counted toward this candidate.
 
 ## 11. Known limitations
 
@@ -251,34 +279,40 @@ evidence, but it cannot be relabeled as validation of the new workspace.
 - Conversion: static/behavior success does not prove visual fidelity,
   accessibility, or every runtime flow. TodoMVC's pre-existing creation-event
   limitation remains.
-- Packaging: no fresh signed/notarized native archive or physical Windows/Linux
-  install was produced for this unversioned candidate.
+- Packaging: final-candidate native archives are CI artifacts, not published
+  release assets. macOS is ad-hoc signed but not Developer ID signed/notarized;
+  Windows is unsigned. No user-owned physical Windows/Linux install was run.
+- Authentication: hosted native probes use an isolated home and intentionally
+  report `sign_in_required`; they validate App Server availability, not a real
+  signed-in account. Real signed-in recovery evidence is the separate local
+  App Server probe.
 
 ## 12. Saturation evidence
 
-Local cross-cutting convergence was reached for the persistence/controller/GUI
-boundaries: independent architecture, security, GUI, persistence, and
-cross-platform reviews
-found failures in separate layers. The cross-platform continuation then found
-and reproduced root-anchor replacement, final-record following, and free-text
-credential persistence before candidate fixation; the corrections were
-generalized and added
-to restart, corruption, identity, stale-event, recovery, privacy, native Qt,
-real App Server, real OSS, build, and browser regressions. Re-running the local
-suite did not expose another failure, but the new containment correction still
-requires its real Windows junction replay before its P0 disposition is closed.
+Independent architecture, security/privacy, GUI, persistence, recovery, and
+cross-platform reviews found failures in separate owning layers. The loop
+reproduced and corrected root-anchor replacement, final-record following,
+credential/device-code persistence, Windows lifecycle-test isolation, and NTFS
+short/long path handling. Each correction gained a regression or integration
+gate and was followed by a fresh candidate run.
 
-Release saturation was **not** reached. A fresh candidate three-OS CI matrix,
-native archives, and physical Windows/Linux workspace/recovery runs remain.
-Therefore this report does not call Phase C universally complete or release
-ready.
+Saturation for release **review** was reached when the exact source candidate
+passed the full three-OS matrix, the real Windows junction gate, all three
+native archive/startup/restart/privacy probes, downloaded-archive integrity and
+traversal inspection, local full/PySide suites, browser/framework evidence,
+and real App Server process-loss recovery without another P0/P1 cross-cutting
+failure. This is not a claim of universal platform completeness or a release
+authorization. Physical user-owned Windows/Linux, production signing, and
+notarization remain release-process evidence, not silently inferred passes.
 
 ## 13. Release recommendation
 
-Recommend `v2.1.0`: the change is additive but introduces a substantial
-user-visible workspace and the first versioned persistence schema. It does not
-break the CLI/Core/Skill contract and does not justify a major version.
+**Ready for v2.1.0 release review.**
 
-Release readiness: **not yet**. Merge review plus a fresh green three-OS CI and
-native archive/install validation should precede version bump, tag, or GitHub
-Release. No release, tag, historical-tag change, or publication was performed.
+The change is additive but introduces a substantial user-visible workspace and
+the first versioned persistence schema. The fresh evidence found no remaining
+P0/P1 cross-cutting failure and no Core/CLI/Skill regression. The recommended
+minor version remains `v2.1.0`; this report does not authorize changing the
+version, creating a tag/Release, merging to `main`, or publishing artifacts.
+Release review must explicitly accept or schedule production signing/notarization
+and any desired user-owned physical Windows/Linux acceptance run.

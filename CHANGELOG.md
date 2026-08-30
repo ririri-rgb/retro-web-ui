@@ -4,6 +4,8 @@ All notable changes follow [Keep a Changelog](https://keepachangelog.com/en/1.1.
 
 ## [Unreleased]
 
+## [2.1.0] - 2026-08-31
+
 ### Added
 
 - Local Project/Conversion Session workspace with canonical project registration, independent UUID session lifecycles, restart reconciliation, historical inspection, integrity-aware comparison, and explicit Codex thread recovery.
