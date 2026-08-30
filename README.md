@@ -22,6 +22,15 @@ ChatGPT sign-in, answer approval requests, interrupt/reconnect, and review
 verification, Git diff, and Before/After evidence. It does not ask for or store
 an OpenAI API key, and it does not replace the Core/CLI/Skill conversion logic.
 
+The current development tree also adds a local Project/Session workspace. It
+registers canonical project paths without copying source, gives each conversion
+an independent lifecycle, preserves hashed baseline/Core/Git evidence, restores
+interrupted work honestly after restart, and compares recorded sessions. A
+recovered Codex thread is loaded for review only; it is not an automatic turn
+resume or source rollback. Missing or changed artifacts remain visible, and
+historical evidence is never relabeled as the current working tree. This
+workspace is not part of the published v2.0.1 archives.
+
 ![Retro Web UI desktop GUI](screenshots/gui/desktop-xp.png)
 
 Download the native archive for macOS arm64, Windows x86_64, or Linux x86_64 from the
@@ -44,7 +53,9 @@ On Windows, use `.venv-gui\Scripts\retro-web-ui-gui.exe`. Codex must already be
 installed and signed in with ChatGPT; the GUI starts `codex app-server` locally
 over stdio and never asks for an API key. Published `v1.1.0` remains the
 immutable pre-GUI CLI + Skill baseline. See the [desktop architecture](docs/gui-architecture.md)
-and [v2 engineering evidence](docs/gui-validation-report.md). Exact per-platform
+and [v2 engineering evidence](docs/gui-validation-report.md). Phase C workspace
+architecture and candidate evidence are recorded in the
+[workspace validation report](docs/gui-workspace-validation-report.md). Exact per-platform
 extraction, signing boundaries, Codex troubleshooting, and portable uninstall
 steps are in the [desktop distribution guide](docs/distribution.md).
 

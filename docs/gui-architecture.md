@@ -27,7 +27,9 @@ accessibility defects or proprietary Microsoft assets.
 
 ```text
 Qt Widgets
-  -> WorkflowController (presentation state and result classification)
+  -> DesktopController (composition and presentation state)
+     -> WorkspaceStore (project/session identity and evidence references)
+     -> ConversionWorkflow (one live conversion and result classification)
      -> CoreFacade (bundled CLI JSON contract)
         -> retro_web_ui.core and existing deterministic helpers
      -> CodexBridge (stable application-facing interface)
@@ -35,6 +37,46 @@ Qt Widgets
            -> the user's existing Codex/ChatGPT login
               -> Retro Web UI Skill and target application
 ```
+
+## Project and conversion-session workspace
+
+The GUI owns a local, versioned file workspace under the platform application
+data directory. This layer registers canonical project roots and gives each
+conversion its own UUID, lifecycle, Codex thread/turn references, configuration,
+and integrity-checked evidence manifest. It does not copy or own the selected
+source repository.
+
+Project records and session records are separate JSON documents so one corrupt
+session does not hide unrelated history. Writes use a same-directory temporary
+file, `fsync`, and atomic replacement. On supported POSIX hosts, directories are
+mode `0700` and files are mode `0600`. Each project is limited to 256 sessions;
+the application fails closed at the limit instead of silently deleting history.
+Artifacts are limited to 2 MB each and 64 per session.
+
+The artifact store copies the external behavior baseline and records bounded
+Core evidence plus start/end Git observations. Every copied artifact has a byte
+length and SHA-256 digest. History views report `available`, `missing`,
+`changed`, `not captured`, or `not applicable` rather than silently regenerating
+evidence. Git observations retain the HEAD fingerprint, changed paths, stat,
+and a patch digest/size, but not raw patch content. They may include pre-existing
+user work and are never presented as exclusive agent attribution.
+
+The workspace persists no raw App Server event stream, prompt, account payload,
+login URL, approval payload, command output, or authentication credential. A
+stored Codex thread ID is a reference, not a resumable conversion guarantee.
+Recovery is explicit, revalidates the exact local project/application and
+baseline digest, requires the returned durable thread ID to match, and branches
+on the remote turn status. A still-running turn remains locked and
+interruptible; a confirmed terminal turn becomes review/retry eligible; an
+unknown status fails closed. When App Server returns a working directory it
+must match the selected application, while its absence is labeled as an
+unverified server-side binding. Recovery never automatically resumes a turn.
+
+Nonterminal `running`, `awaiting_approval`, `verifying`, and
+`verification_pending` sessions become `transport_lost` after a process restart.
+Terminal classifications remain terminal only when their recorded manifest says
+so. Reopening a session never evaluates current source and labels it historical;
+current project availability and artifact integrity are reported separately.
 
 `CoreFacade` invokes the canonical CLI parser and handlers in-process from an
 installed or frozen package, while a raw source checkout can still use the same

@@ -113,6 +113,18 @@ class CodexBridgeTests(unittest.TestCase):
     def tearDown(self) -> None:
         self.bridge.shutdown(wait_seconds=0)
 
+    def test_diagnostic_redaction_covers_urls_cookies_and_private_keys(self):
+        value = (
+            "https://example.test/login?code=one-time&safe=yes\n"
+            "Cookie: session=secret-cookie\n"
+            "-----BEGIN PRIVATE KEY-----\nsecret material\n-----END PRIVATE KEY-----"
+        )
+        redacted = redact_secrets(value)
+        self.assertNotIn("one-time", redacted)
+        self.assertNotIn("secret-cookie", redacted)
+        self.assertNotIn("secret material", redacted)
+        self.assertIn("safe=yes", redacted)
+
     def _wait_for_write(self, method: str) -> dict[str, Any]:
         for _ in range(100):
             for message in self.process.stdin.writes:

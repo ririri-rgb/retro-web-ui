@@ -64,6 +64,7 @@ class GitState:
     root: Optional[Path]
     dirty: bool
     entries: tuple[str, ...]
+    head: Optional[str] = None
 
 
 @dataclass(frozen=True)
@@ -288,7 +289,12 @@ class CoreFacade:
             capture_output=True, text=True, check=False, timeout=10,
         )
         entries = tuple(line for line in status.stdout.splitlines() if line) if not status.returncode else ()
-        return GitState(True, True, git_root, bool(entries), entries)
+        head_probe = subprocess.run(
+            ["git", "-C", str(project), "rev-parse", "HEAD"],
+            capture_output=True, text=True, check=False, timeout=10,
+        )
+        head = head_probe.stdout.strip() if head_probe.returncode == 0 else None
+        return GitState(True, True, git_root, bool(entries), entries, head)
 
     def diff_summary(self, root: Path | str) -> DiffSummary:
         project = self.project_root(root)

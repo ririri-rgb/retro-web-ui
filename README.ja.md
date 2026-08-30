@@ -12,6 +12,12 @@ repository/applicationと4テーマを選択し、Core/CLIによる解析とbeha
 GUI内でagent event、command/file/permission approval、interrupt/reconnect、verification、Git diff、
 Before/Afterを確認できます。OpenAI API keyの入力・保存は行わず、semantic conversion engineをGUIへ再実装していません。
 
+現在の開発treeには、localなProject/Session workspaceも追加されています。sourceをcopyせずcanonical
+project pathを登録し、変換ごとのlifecycle、hash付きbaseline/Core/Git evidence、再起動後の中断状態、
+session比較を保持します。復元したCodex threadはreview用に読み込むだけで、turnの自動再開やsource rollbackでは
+ありません。missing/changed artifactは明示し、historical evidenceを現在のworking treeとして表示しません。
+このworkspaceは公開済みv2.0.1 archiveには含まれていません。
+
 ![Retro Web UI desktop GUI](screenshots/gui/desktop-xp.png)
 
 [v2.0.1 release](https://github.com/ririri-rgb/retro-web-ui/releases/tag/v2.0.1)から
@@ -29,7 +35,8 @@ python3 -m venv .venv-gui
 Windowsでは`.venv-gui\Scripts\retro-web-ui-gui.exe`を使います。Codexが既にinstallされ、
 ChatGPTでsign in済みである必要があります。GUIはAPI keyを要求せず、local stdioの`codex app-server`を使います。
 公開済み`v1.1.0`はimmutableなGUI以前のCLI + Skill baselineです。詳細は
-[Desktop GUI architecture](docs/gui-architecture.md)、[GUI engineering report](docs/gui-validation-report.md)、OS別の展開・署名境界・Codex診断・uninstallをまとめた[Desktop distribution guide](docs/distribution.md)を参照してください。
+[Desktop GUI architecture](docs/gui-architecture.md)、[GUI engineering report](docs/gui-validation-report.md)、
+[Phase C workspace validation report](docs/gui-workspace-validation-report.md)、OS別の展開・署名境界・Codex診断・uninstallをまとめた[Desktop distribution guide](docs/distribution.md)を参照してください。
 
 変換前と4テーマの実描画結果は[英語README](README.md)冒頭で比較できます。5枚は同一HTML・同一JavaScriptを使っています。さらに、pinned TodoMVC、React/Vite、React/MUI/Emotion、Vue/Bootstrap、SvelteKit、Next App Router/Radix/Tailwind、およびpinned `naive-ui-admin`のlogin surfaceで、範囲を区別しながらsemantic変換を検証しています。
 

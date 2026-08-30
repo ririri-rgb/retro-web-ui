@@ -12,6 +12,7 @@ import argparse
 import json
 from pathlib import Path
 import sys
+import tempfile
 import time
 from collections import Counter
 from typing import Any, Mapping
@@ -24,6 +25,7 @@ from retro_web_ui_gui.codex_bridge import CodexBridge
 from retro_web_ui_gui.controller import DesktopController
 from retro_web_ui_gui.core_facade import CoreFacade
 from retro_web_ui_gui.workflow import ConversionWorkflow
+from retro_web_ui_gui.workspace import IntegrityState, WorkspaceStore
 from retro_web_ui_gui import __version__
 
 
@@ -38,6 +40,8 @@ class HeadlessWindow:
         self.verification = ""
         self.diff = ""
         self.models: list[Mapping[str, Any]] = []
+        self.workspace_projects: list[Mapping[str, Any]] = []
+        self.workspace_sessions: list[Mapping[str, Any]] = []
 
     def set_codex_state(self, state: str, message: str) -> None:
         self.states.append(state)
@@ -87,6 +91,24 @@ class HeadlessWindow:
         # Manual E2E never launches authentication UI. It reports auth_required.
         return False
 
+    def set_workspace_projects(self, projects: list[Mapping[str, Any]]) -> None:
+        self.workspace_projects = list(projects)
+
+    def set_workspace_sessions(self, sessions: list[Mapping[str, Any]]) -> None:
+        self.workspace_sessions = list(sessions)
+
+    def set_session_detail(self, text: str) -> None:
+        self.session_detail = text
+
+    def set_conversion_controls(self, **state: Any) -> None:
+        self.command_state = dict(state)
+
+    def set_busy(self, busy: bool, message: str | None = None) -> None:
+        self.busy = busy
+
+    def request_user_input(self, request: Mapping[str, Any]) -> Mapping[str, list[str]]:
+        return {}
+
 
 def parser() -> argparse.ArgumentParser:
     value = argparse.ArgumentParser(description=__doc__)
@@ -98,6 +120,7 @@ def parser() -> argparse.ArgumentParser:
     value.add_argument("--timeout", type=float, default=900)
     value.add_argument("--approve-agent-commands", action="store_true")
     value.add_argument("--approve-target-commands", action="store_true")
+    value.add_argument("--workspace", type=Path, help="external directory for durable Project/Session evidence")
     return value
 
 
@@ -119,9 +142,12 @@ def main(argv: list[str] | None = None) -> int:
     facade = CoreFacade()
     workflow = ConversionWorkflow(facade)
     bridge = CodexBridge(client_name="retro_web_ui_gui_e2e", client_title="Retro Web UI GUI E2E", client_version=__version__)
-    controller = DesktopController(window, facade=facade, workflow=workflow, bridge=bridge)
+    workspace_root = (args.workspace or Path(tempfile.mkdtemp(prefix="retro-web-ui-workspace-e2e-"))).resolve()
+    workspace = WorkspaceStore(workspace_root)
+    controller = DesktopController(window, facade=facade, workflow=workflow, bridge=bridge, workspace=workspace)
     started = time.monotonic()
     exit_code = 1
+    closed = False
     try:
         snapshot = controller.select_project(str(target))
         if args.app:
@@ -144,6 +170,13 @@ def main(argv: list[str] | None = None) -> int:
                 controller.interrupt()
                 raise TimeoutError("Timed out waiting for conversion completion")
             time.sleep(0.02)
+        project_id = controller.workspace_project_id
+        session_id = controller.workspace_session_id
+        controller.close()
+        closed = True
+        restarted_store = WorkspaceStore(workspace_root)
+        restored = restarted_store.get_session(project_id, session_id) if project_id and session_id else None
+        baseline = restarted_store.artifact_status(project_id, session_id, "behavior-baseline.json") if project_id and session_id else None
         summary = {
             "target": str(target),
             "theme": args.theme,
@@ -153,11 +186,18 @@ def main(argv: list[str] | None = None) -> int:
             "event_counts": dict(Counter(str(event.get("kind")) for event in window.events)),
             "modified_files": list(workflow.diff.files) if workflow.diff else [],
             "verification_excerpt": window.verification[-4000:],
+            "workspace": str(workspace_root),
+            "session_id": session_id,
+            "restored_state": restored.state.value if restored else None,
+            "restored_classification": restored.classification if restored else None,
+            "baseline_integrity": baseline.integrity.value if baseline else IntegrityState.NOT_CAPTURED.value,
+            "restart_reconciled": len(restarted_store.reconcile_startup()),
         }
         print(json.dumps(summary, ensure_ascii=False, indent=2))
         exit_code = 0 if window.result in {"complete", "complete_with_review_items", "review_required"} else 1
     finally:
-        controller.close()
+        if not closed:
+            controller.close()
     return exit_code
 
 

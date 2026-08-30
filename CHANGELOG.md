@@ -4,6 +4,23 @@ All notable changes follow [Keep a Changelog](https://keepachangelog.com/en/1.1.
 
 ## [Unreleased]
 
+### Added
+
+- Local Project/Conversion Session workspace with canonical project registration, independent UUID session lifecycles, restart reconciliation, historical inspection, integrity-aware comparison, and explicit Codex thread recovery.
+- Versioned, atomically replaced workspace records and bounded evidence manifests for behavior baselines, deterministic Core results, agent assessment, and metadata-only Git observations.
+
+### Changed
+
+- The desktop controller now derives conversion/recovery controls from workflow and remote-turn state, locks project/history mutation during active work, and labels restored evidence as historical rather than current source truth.
+- GUI portability CI now exercises the persistence and recovery regression suite alongside controller, bridge, workflow, and widget tests.
+
+### Fixed
+
+- Rejected stale cross-thread approval, user-input, diff, and completion events before they can affect the active conversion.
+- Prevented raw Git patches, authentication-shaped values, symlinked workspace paths, malformed record IDs, and oversized post-capture artifact replacements from crossing persistence boundaries.
+- Preserved the external behavior baseline durably before temporary cleanup and retained model/reasoning metadata across artifact updates.
+- Degraded safely to conversion-without-history when the platform workspace directory cannot be initialized.
+
 ## [2.0.0] - 2026-08-29
 
 ### Added

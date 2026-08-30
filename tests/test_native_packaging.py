@@ -181,14 +181,26 @@ class NativePackagingTests(unittest.TestCase):
                     "manifestCompatible": True, "skillAvailable": True,
                     "windowVisible": True, "appServer": "ready",
                 }) + "\n"),
+                SimpleNamespace(stdout=json.dumps({
+                    "phase": "created", "state": "running", "artifactSha256": "abc",
+                }) + "\n"),
+                SimpleNamespace(stdout=json.dumps({
+                    "phase": "restored", "state": "transport_lost",
+                    "projectAvailability": "available", "artifactIntegrity": "available",
+                    "artifactSha256": "abc", "privacyScan": "clean", "windowVisible": True,
+                    "projectHistoryCount": 1, "sessionHistoryCount": 1,
+                    "workspaceRoot": str(root / "extracted" / "isolated-home" / "AppData" / "Local" / "Retro Web UI"),
+                }) + "\n"),
             ]
             with mock.patch("scripts.build_native.run", side_effect=responses) as runner:
-                version, smoke = verify_delivered_archive(
+                version, smoke, lifecycle = verify_delivered_archive(
                     artifact, root / "extracted", "windows", app_server_smoke=True
                 )
             self.assertEqual(version, f"Retro Web UI GUI {VERSION}")
             self.assertEqual(smoke["appServer"], "ready")
+            self.assertEqual(lifecycle["restore"]["privacyScan"], "clean")
             self.assertIn("--app-server-smoke", runner.call_args_list[1].args[0])
+            self.assertIn("--workspace-lifecycle-smoke", runner.call_args_list[2].args[0])
 
     def test_linux_abi_versions_are_derived_from_bundled_files(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:

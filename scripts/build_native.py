@@ -413,7 +413,7 @@ def verify_delivered_archive(
     system: str,
     *,
     app_server_smoke: bool = False,
-) -> tuple[str, dict[str, object]]:
+) -> tuple[str, dict[str, object], dict[str, object]]:
     """Extract and execute the exact archive that will be delivered to users."""
     destination.mkdir(parents=True, exist_ok=True)
     if system == "macos":
@@ -440,6 +440,9 @@ def verify_delivered_archive(
     isolated_home.mkdir()
     environment["HOME"] = str(isolated_home)
     environment["XDG_CONFIG_HOME"] = str(isolated_home / ".config")
+    environment["XDG_STATE_HOME"] = str(isolated_home / ".local" / "state")
+    environment["XDG_DATA_HOME"] = str(isolated_home / ".local" / "share")
+    environment["XDG_CACHE_HOME"] = str(isolated_home / ".cache")
     for inherited in ("PYTHONHOME", "PYTHONPATH", "QT_PLUGIN_PATH", "QML2_IMPORT_PATH"):
         environment.pop(inherited, None)
     if system == "windows":
@@ -478,7 +481,66 @@ def verify_delivered_archive(
         mismatches["appServer"] = {"expected": "ready", "actual": smoke.get("appServer")}
     if mismatches:
         raise RuntimeError(f"Delivered GUI smoke contract failed: {mismatches}")
-    return version_output, smoke
+    fixture_project = destination / "workspace-fixture-project"
+    (fixture_project / "app").mkdir(parents=True)
+    (fixture_project / "app" / "index.html").write_text("<!doctype html><title>Workspace smoke</title>\n", encoding="utf-8")
+    lifecycle_args = ["--workspace-smoke-project", str(fixture_project)]
+    create_output = run(
+        [str(executable), "--workspace-lifecycle-smoke", "create", *lifecycle_args],
+        env=environment,
+        timeout=60,
+    ).stdout.strip().splitlines()
+    restore_output = run(
+        [str(executable), "--workspace-lifecycle-smoke", "restore", *lifecycle_args],
+        env=environment,
+        timeout=60,
+    ).stdout.strip().splitlines()
+    try:
+        created = json.loads(create_output[-1])
+        restored = json.loads(restore_output[-1])
+    except (IndexError, json.JSONDecodeError) as error:
+        raise RuntimeError("Delivered GUI workspace lifecycle did not return valid JSON results.") from error
+    expected_workspace = (
+        Path(environment["LOCALAPPDATA"]) / "Retro Web UI"
+        if system == "windows"
+        else isolated_home / "Library" / "Application Support" / "Retro Web UI"
+        if system == "macos"
+        else Path(environment["XDG_STATE_HOME"]) / "retro-web-ui"
+    )
+    lifecycle_required = {
+        "phase": "restored",
+        "state": "transport_lost",
+        "projectAvailability": "available",
+        "artifactIntegrity": "available",
+        "privacyScan": "clean",
+        "windowVisible": True,
+        "projectHistoryCount": 1,
+        "sessionHistoryCount": 1,
+    }
+    lifecycle_mismatches = {
+        key: {"expected": value, "actual": restored.get(key)}
+        for key, value in lifecycle_required.items()
+        if restored.get(key) != value
+    }
+    if created.get("phase") != "created" or created.get("state") != "running":
+        lifecycle_mismatches["createState"] = {"expected": "created/running", "actual": created}
+    if created.get("artifactSha256") != restored.get("artifactSha256"):
+        lifecycle_mismatches["artifactSha256"] = {
+            "expected": created.get("artifactSha256"),
+            "actual": restored.get("artifactSha256"),
+        }
+    try:
+        observed_workspace = Path(str(restored.get("workspaceRoot"))).resolve()
+    except (OSError, TypeError, ValueError):
+        observed_workspace = Path(".")
+    if observed_workspace != expected_workspace.resolve():
+        lifecycle_mismatches["workspaceRoot"] = {
+            "expected": str(expected_workspace.resolve()),
+            "actual": str(restored.get("workspaceRoot")),
+        }
+    if lifecycle_mismatches:
+        raise RuntimeError(f"Delivered GUI workspace lifecycle failed: {lifecycle_mismatches}")
+    return version_output, smoke, {"create": created, "restore": restored}
 
 
 def main() -> int:
@@ -506,6 +568,8 @@ def main() -> int:
             "Create a clean environment and run: python -m pip install '.[native]'"
         )
     system, machine = platform_id()
+    candidate_commit = run(["git", "rev-parse", "HEAD"]).stdout.strip()
+    candidate_clean = not run(["git", "status", "--porcelain", "--untracked-files=all"]).stdout.strip()
     output = args.output.resolve()
     work = Path(tempfile.mkdtemp(prefix=f"retro-web-ui-native-{system}-"))
     try:
@@ -575,7 +639,7 @@ def main() -> int:
         validate_archive_layout(artifact, system)
         validate_archive_licenses(artifact)
         validate_archive_inventory(artifact, system)
-        version_output, smoke_result = verify_delivered_archive(
+        version_output, smoke_result, workspace_lifecycle = verify_delivered_archive(
             artifact,
             work / "delivered-check",
             system,
@@ -585,6 +649,8 @@ def main() -> int:
         write_checksum_file(artifact, digest)
         report = {
             "version": VERSION,
+            "candidateCommit": candidate_commit,
+            "candidateClean": candidate_clean,
             "platform": system,
             "architecture": machine,
             "python": platform.python_version(),
@@ -605,6 +671,7 @@ def main() -> int:
             "signing": "ad-hoc-verified" if system == "macos" else "unsigned" if system == "windows" else "not-applicable",
             "versionOutput": version_output,
             "smoke": smoke_result,
+            "workspaceLifecycle": workspace_lifecycle,
         }
         if abi_versions is not None:
             report["linuxAbi"] = abi_versions

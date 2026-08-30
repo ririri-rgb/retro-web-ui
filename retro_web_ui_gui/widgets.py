@@ -166,12 +166,17 @@ class MainWindow(QMainWindow):
     conversion_requested = Signal()
     conversion_cancelled = Signal()
     approval_decided = Signal(bool)
+    registered_project_requested = Signal(str)
+    session_inspection_requested = Signal(str)
+    session_comparison_requested = Signal(str, str)
+    session_recovery_requested = Signal(str)
 
     def __init__(self, workflow: WorkflowPort | None = None, *, asset_root: Path | None = None) -> None:
         super().__init__()
         self._workflow = workflow
         self._asset_root = asset_root or Path(__file__).resolve().parents[1]
         self._current_theme = "windows-xp"
+        self._busy = False
         self._build_window()
         self._connect_port()
         self.set_codex_state("unavailable", "Codex availability has not been checked. Local project analysis remains available.")
@@ -335,6 +340,49 @@ class MainWindow(QMainWindow):
         tabs = QTabWidget()
         self.review_tabs = tabs
         tabs.setAccessibleName("Workflow evidence tabs")
+        workspace = QWidget()
+        workspace_layout = QHBoxLayout(workspace)
+        projects_box = QGroupBox("Registered projects")
+        projects_layout = QVBoxLayout(projects_box)
+        self.project_history = QListWidget()
+        self.project_history.setAccessibleName("Registered project history")
+        self.project_history.setSelectionMode(QAbstractItemView.SingleSelection)
+        self.project_history.itemDoubleClicked.connect(lambda _item: self._open_registered_project())
+        projects_layout.addWidget(self.project_history)
+        self.open_project_button = QPushButton("&Open selected project")
+        self.open_project_button.setAccessibleName("Open selected registered project")
+        self.open_project_button.clicked.connect(self._open_registered_project)
+        projects_layout.addWidget(self.open_project_button)
+        workspace_layout.addWidget(projects_box, 2)
+        sessions_box = QGroupBox("Conversion sessions")
+        sessions_layout = QVBoxLayout(sessions_box)
+        self.session_history = QListWidget()
+        self.session_history.setAccessibleName("Conversion session history")
+        self.session_history.setSelectionMode(QAbstractItemView.ExtendedSelection)
+        self.session_history.itemSelectionChanged.connect(self._session_history_changed)
+        sessions_layout.addWidget(self.session_history)
+        self.compare_sessions_button = QPushButton("&Compare two selected sessions")
+        self.compare_sessions_button.setAccessibleName("Compare two selected conversion sessions")
+        self.compare_sessions_button.clicked.connect(self._compare_selected_sessions)
+        self.compare_sessions_button.setEnabled(False)
+        sessions_layout.addWidget(self.compare_sessions_button)
+        self.recover_session_button = QPushButton("Recover selected &Codex thread for review")
+        self.recover_session_button.setAccessibleName("Recover selected Codex thread for review")
+        self.recover_session_button.clicked.connect(self._recover_selected_session)
+        self.recover_session_button.setEnabled(False)
+        sessions_layout.addWidget(self.recover_session_button)
+        workspace_layout.addWidget(sessions_box, 3)
+        history_box = QGroupBox("Historical session evidence")
+        history_layout = QVBoxLayout(history_box)
+        self.session_detail = QPlainTextEdit()
+        self.session_detail.setReadOnly(True)
+        self.session_detail.setAccessibleName("Historical conversion session evidence")
+        self.session_detail.setPlaceholderText(
+            "Select a historical session. Stored observations are distinct from the current project state."
+        )
+        history_layout.addWidget(self.session_detail)
+        workspace_layout.addWidget(history_box, 4)
+        tabs.addTab(workspace, "Workspace")
         analysis = QWidget()
         analysis_layout = QVBoxLayout(analysis)
         self.analysis_text = QPlainTextEdit()
@@ -418,6 +466,44 @@ class MainWindow(QMainWindow):
         self.analysis_text.setPlainText(result)
         self._set_stage("analysis")
 
+    def set_workspace_projects(self, projects: list[Mapping[str, Any]]) -> None:
+        selected = self.project_history.currentItem()
+        selected_id = selected.data(Qt.UserRole) if selected else None
+        self.project_history.clear()
+        for project in projects:
+            project_id = str(project.get("project_id") or project.get("projectId") or "")
+            if not project_id:
+                continue
+            name = str(project.get("display_name") or project.get("displayName") or "Project")
+            availability = str(project.get("availability") or "unknown")
+            path = str(project.get("canonical_path") or project.get("canonicalPath") or "")
+            item = QListWidgetItem(f"{name} — {availability}\n{path}")
+            item.setData(Qt.UserRole, project_id)
+            self.project_history.addItem(item)
+            if project_id == selected_id:
+                self.project_history.setCurrentItem(item)
+
+    def set_workspace_sessions(self, sessions: list[Mapping[str, Any]]) -> None:
+        self.session_history.clear()
+        for session in sessions:
+            session_id = str(session.get("session_id") or session.get("sessionId") or "")
+            if not session_id:
+                continue
+            state = str(session.get("state") or "unknown")
+            theme = str(session.get("theme") or "theme not selected")
+            created = str(session.get("created_at") or session.get("createdAt") or "")
+            item = QListWidgetItem(f"{created} — {theme} — {state}")
+            item.setData(Qt.UserRole, session_id)
+            self.session_history.addItem(item)
+
+    def set_session_detail(self, text: str) -> None:
+        self.session_detail.setPlainText(text)
+
+    def set_conversion_controls(self, *, can_start: bool, can_interrupt: bool, busy: bool = False) -> None:
+        """Apply controller-derived command state instead of inferring it from labels."""
+        self.start_action.setEnabled(bool(can_start and not busy))
+        self.cancel_action.setEnabled(bool(can_interrupt))
+
     def set_codex_state(self, state: str, message: str) -> None:
         labels = {
             "checking": "Checking Codex",
@@ -470,6 +556,7 @@ class MainWindow(QMainWindow):
         return QDesktopServices.openUrl(QUrl(url))
 
     def set_busy(self, busy: bool, message: str | None = None) -> None:
+        self._busy = busy
         self.project_path.setEnabled(not busy)
         self.browse_button.setEnabled(not busy)
         self.choose_action.setEnabled(not busy)
@@ -478,6 +565,11 @@ class MainWindow(QMainWindow):
         self.theme_combo.setEnabled(not busy)
         self.model_combo.setEnabled(not busy)
         self.effort_combo.setEnabled(not busy)
+        self.project_history.setEnabled(not busy)
+        self.session_history.setEnabled(not busy)
+        self.open_project_button.setEnabled(not busy)
+        self.compare_sessions_button.setEnabled(not busy and len(self.session_history.selectedItems()) == 2)
+        self.recover_session_button.setEnabled(not busy and len(self.session_history.selectedItems()) == 1)
         self.start_action.setEnabled(not busy and self.status_phase.text() == "Codex ready")
         if message:
             self.status_message.setText(message)
@@ -543,6 +635,31 @@ class MainWindow(QMainWindow):
     def set_before_after(self, before: str | Path | None, after: str | Path | None) -> None:
         self._set_image(self.before_preview, before, "Before")
         self._set_image(self.after_preview, after, "After")
+
+    def _open_registered_project(self) -> None:
+        item = self.project_history.currentItem()
+        if item is not None and item.data(Qt.UserRole):
+            self.registered_project_requested.emit(str(item.data(Qt.UserRole)))
+
+    def _session_history_changed(self) -> None:
+        selected = self.session_history.selectedItems()
+        self.compare_sessions_button.setEnabled(not self._busy and len(selected) == 2)
+        self.recover_session_button.setEnabled(not self._busy and len(selected) == 1)
+        if not self._busy and selected and selected[-1].data(Qt.UserRole):
+            self.session_inspection_requested.emit(str(selected[-1].data(Qt.UserRole)))
+
+    def _compare_selected_sessions(self) -> None:
+        selected = self.session_history.selectedItems()
+        if len(selected) != 2:
+            QMessageBox.information(self, "Select two sessions", "Select exactly two sessions to compare.")
+            return
+        left, right = (str(item.data(Qt.UserRole)) for item in selected)
+        self.session_comparison_requested.emit(left, right)
+
+    def _recover_selected_session(self) -> None:
+        selected = self.session_history.selectedItems()
+        if len(selected) == 1 and selected[0].data(Qt.UserRole):
+            self.session_recovery_requested.emit(str(selected[0].data(Qt.UserRole)))
 
     def _set_image(self, label: QLabel, path: str | Path | None, title: str) -> None:
         pixmap = QPixmap(str(path)) if path else QPixmap()

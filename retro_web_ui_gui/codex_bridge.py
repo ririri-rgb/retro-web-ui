@@ -103,6 +103,9 @@ _TOKEN_VALUE = re.compile(
     r"\b(?:sk-[A-Za-z0-9_-]{8,}|Bearer\s+[^\s]+|eyJ[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+)\b",
     re.I,
 )
+_QUERY_SECRET = re.compile(r"([?&](?:access_token|refresh_token|token|code|key|secret)=)[^&\s]+", re.I)
+_COOKIE_VALUE = re.compile(r"\b(?:Cookie|Set-Cookie):\s*[^\r\n]+", re.I)
+_PRIVATE_KEY = re.compile(r"-----BEGIN [A-Z0-9 ]*PRIVATE KEY-----.*?-----END [A-Z0-9 ]*PRIVATE KEY-----", re.S)
 
 
 def redact_secrets(value: Any) -> Any:
@@ -121,7 +124,10 @@ def redact_secrets(value: Any) -> Any:
     if isinstance(value, (list, tuple)):
         return [redact_secrets(item) for item in value]
     if isinstance(value, str):
-        return _TOKEN_VALUE.sub("[REDACTED]", value)
+        redacted = _PRIVATE_KEY.sub("[REDACTED PRIVATE KEY]", value)
+        redacted = _COOKIE_VALUE.sub("Cookie: [REDACTED]", redacted)
+        redacted = _QUERY_SECRET.sub(r"\1[REDACTED]", redacted)
+        return _TOKEN_VALUE.sub("[REDACTED]", redacted)
     return value
 
 

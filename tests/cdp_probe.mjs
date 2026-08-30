@@ -12,7 +12,7 @@ const options = Object.fromEntries(process.argv.slice(2).reduce((pairs, value, i
 }, []));
 
 if (!options.browser || !options.url || !options.scenario) {
-  throw new Error('usage: cdp_probe.mjs --browser PATH --url URL --scenario mui|vue|svelte|next');
+  throw new Error('usage: cdp_probe.mjs --browser PATH --url URL --scenario static|mui|vue|svelte|next');
 }
 
 const profile = mkdtempSync(join(tmpdir(), 'retro-web-ui-cdp-'));
@@ -119,6 +119,29 @@ async function pressEscape(cdp) {
 }
 
 const scenarios = {
+  async static(cdp) {
+    await cdp.evaluate(`localStorage.clear()`);
+    await setNativeInput(cdp, 'input[name="name"]', 'External item');
+    await cdp.evaluate(`document.querySelector('#item-form').requestSubmit()`);
+    await waitFor(cdp, `localStorage.getItem('last-item') === 'External item'`, 'static form persistence');
+    await cdp.send('Page.reload', { ignoreCache: true });
+    await waitFor(cdp, `document.readyState === 'complete'`, 'static reload');
+    const retained = await cdp.evaluate(`localStorage.getItem('last-item')`);
+    if (retained !== 'External item') throw new Error('static localStorage value did not survive reload');
+    const semantics = await cdp.evaluate(`({
+      theme: document.body.dataset.retroTheme,
+      labelOwnsInput: document.querySelector('label')?.contains(document.querySelector('input[name="name"]')),
+      submitType: document.querySelector('button')?.type,
+      hiddenRule: [...document.styleSheets].flatMap((sheet) => { try { return [...sheet.cssRules]; } catch { return []; } }).some((rule) => rule.cssText?.includes('[hidden]'))
+    })`);
+    if (semantics.theme !== 'windows-xp' || !semantics.labelOwnsInput || semantics.submitType !== 'submit' || !semantics.hiddenRule) {
+      throw new Error(`static semantic/theme check failed: ${JSON.stringify(semantics)}`);
+    }
+    await cdp.send('Emulation.setDeviceMetricsOverride', { width: 520, height: 700, deviceScaleFactor: 1, mobile: false });
+    const columns = await cdp.evaluate(`getComputedStyle(document.querySelector('.retro-form-grid')).gridTemplateColumns.split(' ').length`);
+    if (columns !== 1) throw new Error(`static narrow layout did not collapse to one column: ${columns}`);
+  },
+
   async mui(cdp) {
     await setNativeInput(cdp, '[data-fixture-name]', '  外部操作  ');
     await cdp.evaluate(`document.querySelector('[data-fixture-form]').requestSubmit()`);
@@ -184,7 +207,11 @@ try {
   await cdp.send('Log.enable');
   await cdp.send('Page.navigate', { url: options.url });
   await waitFor(cdp, `document.readyState === 'complete'`, 'page load');
-  await waitFor(cdp, `document.querySelector('[data-fixture-form]')`, 'hydrated fixture form');
+  await waitFor(
+    cdp,
+    options.scenario === 'static' ? `document.querySelector('#item-form')` : `document.querySelector('[data-fixture-form]')`,
+    options.scenario === 'static' ? 'static fixture form' : 'hydrated fixture form',
+  );
   // A prerendered form can exist before its framework has attached listeners.
   await delay(250);
   const scenario = scenarios[options.scenario];

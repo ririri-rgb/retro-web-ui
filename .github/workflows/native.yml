@@ -74,7 +74,7 @@ jobs:
         shell: bash
         run: |
           python -m json.tool dist/native/native-report-*.json
-          python -c "from pathlib import Path; files=list(Path('dist/native').glob('*.sha256')); assert files; print('checksums', len(files))"
+          python -c "import json, os; from pathlib import Path; reports=list(Path('dist/native').glob('native-report-*.json')); assert len(reports) == 1; report=json.loads(reports[0].read_text()); assert report['candidateCommit'] == os.environ['GITHUB_SHA']; assert report['candidateClean'] is True; assert report['workspaceLifecycle']['restore']['privacyScan'] == 'clean'; files=list(Path('dist/native').glob('*.sha256')); assert files; print('checksums', len(files))"
       - name: Upload native release candidates
         uses: actions/upload-artifact@v6
         with:
