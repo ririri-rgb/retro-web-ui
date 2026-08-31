@@ -29,15 +29,15 @@ interrupted work honestly after restart, and compares recorded sessions. A
 recovered Codex thread is loaded for review only; it is not an automatic turn
 resume or source rollback. Missing or changed artifacts remain visible, and
 historical evidence is never relabeled as the current working tree. This
-workspace ships in the v2.1.1 native archives.
+workspace ships in the v2.1.2 native archives.
 
 ![Retro Web UI desktop GUI](screenshots/gui/desktop-xp.png)
 
 Download the native archive for macOS arm64, Windows x86_64, or Linux x86_64 from the
-[v2.1.1 release](https://github.com/ririri-rgb/retro-web-ui/releases/tag/v2.1.1).
+[v2.1.2 release](https://github.com/ririri-rgb/retro-web-ui/releases/tag/v2.1.2).
 Python and Qt are included; Codex remains an external prerequisite. The macOS
 archive has a verified ad-hoc signature but is not notarized, the Windows archive is unsigned, and
-the v2.1.1 Linux archive is built on Ubuntu 22.04 and gated at GLIBC 2.35 plus a
+the v2.1.2 Linux archive is built on Ubuntu 22.04 and gated at GLIBC 2.35 plus a
 conventional desktop display stack.
 Verify the adjacent SHA-256 file before opening an unsigned package.
 
@@ -102,20 +102,20 @@ A second real-OSS case records a 2026-08-27 manual conversion of the authenticat
 Ask Codex's `$skill-installer` to install the versioned Skill directory from GitHub:
 
 ```text
-$skill-installer install https://github.com/ririri-rgb/retro-web-ui/tree/v2.1.1/skills/retro-web-ui
+$skill-installer install https://github.com/ririri-rgb/retro-web-ui/tree/v2.1.2/skills/retro-web-ui
 ```
 
 Or clone the tagged release and copy the Skill into the current user location:
 
 ```bash
-git clone --branch v2.1.1 --depth 1 https://github.com/ririri-rgb/retro-web-ui.git
+git clone --branch v2.1.2 --depth 1 https://github.com/ririri-rgb/retro-web-ui.git
 mkdir -p "$HOME/.agents/skills"
 cp -R retro-web-ui/skills/retro-web-ui "$HOME/.agents/skills/"
 ```
 
 For a repository-scoped installation, copy it to the repository's `.agents/skills/retro-web-ui/` directory. Codex also follows symlinked Skill folders. Restart or reload the Codex session if an update does not appear. The core Skill and helper scripts require Python 3.9+ and no third-party Python packages. Visual verification requires an installed Chrome/Chromium-compatible browser only when screenshots are requested. The repository's cross-framework regression harness additionally requires Node.js 22+ for its dependency-free external browser driver.
 
-Version `2.1.1` is the current desktop + CLI + Skill release. It retains the standalone Skill layout, installable deterministic CLI, and the `v1.0.0` legacy helper entry points.
+Version `2.1.2` is the current desktop + CLI + Skill release. It retains the standalone Skill layout, installable deterministic CLI, and the `v1.0.0` legacy helper entry points.
 
 ### Install the CLI from a checkout
 
@@ -218,7 +218,7 @@ See [Compatibility evidence](docs/compatibility.md) for exact coverage, the [v1 
 - The static audit excludes dependency and generated directories; dependency CSS can retain modern styling, so computed-style/screenshot inspection is mandatory.
 - The CSS kit intentionally does not reproduce proprietary Windows icons, fonts, wallpapers, sounds, or extracted system bitmaps.
 - Responsive behavior is preserved where practical, but a fixed-window visual composition may need target-specific narrow-screen compromises.
-- Native packages are not Developer ID-notarized or Authenticode-signed in v2.1.1, and there is no auto-updater. Verify checksums and use the operating system's explicit local-app approval flow.
+- Native packages are not Developer ID-notarized or Authenticode-signed in v2.1.2, and there is no auto-updater. Verify checksums and use the operating system's explicit local-app approval flow.
 - The GUI does not infer or install a target application's browser/runtime. Before/After capture remains explicit evidence from an authorized existing runtime.
 
 ## Verification

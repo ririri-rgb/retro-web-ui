@@ -55,6 +55,18 @@ def find_browser(explicit: Optional[str]) -> str:
     raise SystemExit("No Chrome/Chromium executable found; pass --browser")
 
 
+def run_browser(argv: list[str], *, timeout: int = 30, attempts: int = 2) -> subprocess.CompletedProcess[str]:
+    """Run a bounded browser command, retrying only a transient startup timeout."""
+    for attempt in range(1, attempts + 1):
+        try:
+            return subprocess.run(argv, capture_output=True, text=True, timeout=timeout)
+        except subprocess.TimeoutExpired:
+            if attempt == attempts:
+                raise
+            print(f"browser command timed out after {timeout}s; retrying ({attempt + 1}/{attempts})")
+    raise AssertionError("browser retry loop exhausted without returning or raising")
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--browser")
@@ -66,7 +78,7 @@ def main() -> int:
     desktop = common + ["--window-size=1180,760"]
     with running_server(SHOWCASE.parent) as port:
         base = f"http://127.0.0.1:{port}/showcase/index.html"
-        smoke = subprocess.run(desktop + ["--dump-dom", f"{base}?theme=windows-98&selftest=1"], capture_output=True, text=True, timeout=30)
+        smoke = run_browser(desktop + ["--dump-dom", f"{base}?theme=windows-98&selftest=1"])
         if smoke.returncode != 0 or 'data-selftest="passed"' not in smoke.stdout:
             print(smoke.stderr[-2000:])
             print("showcase interaction smoke test failed")
@@ -76,12 +88,9 @@ def main() -> int:
             print("React production fixture is missing; run npm run build:fixtures first")
             return 1
         with running_server(REACT_DIST) as react_port:
-            react = subprocess.run(
+            react = run_browser(
                 desktop
                 + ["--virtual-time-budget=2000", "--dump-dom", f"http://127.0.0.1:{react_port}/?selftest=1"],
-                capture_output=True,
-                text=True,
-                timeout=30,
             )
         if react.returncode != 0 or 'data-selftest="passed"' not in react.stdout or "稼働中" not in react.stdout:
             print(react.stderr[-2000:])
@@ -93,7 +102,7 @@ def main() -> int:
         args.output.mkdir(parents=True, exist_ok=True)
         for theme in THEMES:
             output = (args.output / f"showcase-{theme}.png").resolve()
-            result = subprocess.run(desktop + [f"--screenshot={output}", f"{base}?theme={theme}"], capture_output=True, text=True, timeout=30)
+            result = run_browser(desktop + [f"--screenshot={output}", f"{base}?theme={theme}"])
             if result.returncode != 0 or not output.exists():
                 print(result.stderr[-2000:])
                 print(f"screenshot failed: {theme}")
@@ -101,7 +110,7 @@ def main() -> int:
             print(f"rendered {theme}: {output}")
         for theme in NARROW_CASES:
             output = (args.output / f"showcase-{theme}-narrow.png").resolve()
-            result = subprocess.run(common + ["--window-size=640,900", f"--screenshot={output}", f"{base}?theme={theme}"], capture_output=True, text=True, timeout=30)
+            result = run_browser(common + ["--window-size=640,900", f"--screenshot={output}", f"{base}?theme={theme}"])
             if result.returncode != 0 or not output.exists():
                 print(result.stderr[-2000:])
                 print(f"narrow screenshot failed: {theme}")

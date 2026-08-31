@@ -4,6 +4,7 @@ import hashlib
 import io
 import json
 import os
+import subprocess
 import tempfile
 import unittest
 import urllib.error
@@ -438,6 +439,52 @@ class ManifestTests(unittest.TestCase):
 
 
 class PolicyRegressionTests(unittest.TestCase):
+    def test_release_metadata_recovers_remote_annotated_tag_after_checkout_peels_local_ref(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            remote = root / "remote.git"
+            source = root / "source"
+            checkout = root / "checkout"
+            subprocess.run(["git", "init", "--bare", str(remote)], check=True, capture_output=True)
+            subprocess.run(["git", "init", "-b", "main", str(source)], check=True, capture_output=True)
+            subprocess.run(["git", "-C", str(source), "config", "user.name", "Release Test"], check=True)
+            subprocess.run(["git", "-C", str(source), "config", "user.email", "release@example.invalid"], check=True)
+            (source / "VERSION").write_text("3.4.5\n", encoding="utf-8")
+            subprocess.run(["git", "-C", str(source), "add", "VERSION"], check=True)
+            subprocess.run(["git", "-C", str(source), "commit", "-m", "release source"], check=True, capture_output=True)
+            subprocess.run(["git", "-C", str(source), "tag", "-a", TAG, "-m", "annotated release"], check=True)
+            subprocess.run(["git", "-C", str(source), "remote", "add", "origin", str(remote)], check=True)
+            subprocess.run(["git", "-C", str(source), "push", "origin", "main", TAG], check=True, capture_output=True)
+            subprocess.run(["git", "clone", str(remote), str(checkout)], check=True, capture_output=True)
+
+            expected_commit = subprocess.check_output(
+                ["git", "-C", str(source), "rev-parse", f"{TAG}^{{commit}}"], text=True
+            ).strip()
+            subprocess.run(["git", "-C", str(checkout), "update-ref", f"refs/tags/{TAG}", expected_commit], check=True)
+            local_type = subprocess.check_output(
+                ["git", "-C", str(checkout), "cat-file", "-t", f"refs/tags/{TAG}"], text=True
+            ).strip()
+            self.assertEqual(local_type, "commit")
+
+            verified_ref = f"refs/retro-release-tags/{TAG}"
+            subprocess.run(
+                ["git", "-C", str(checkout), "fetch", "--force", "--no-tags", "origin", f"refs/tags/{TAG}:{verified_ref}"],
+                check=True,
+                capture_output=True,
+            )
+            verified_type = subprocess.check_output(
+                ["git", "-C", str(checkout), "cat-file", "-t", verified_ref], text=True
+            ).strip()
+            verified_commit = subprocess.check_output(
+                ["git", "-C", str(checkout), "rev-parse", f"{verified_ref}^{{commit}}"], text=True
+            ).strip()
+            self.assertEqual(verified_type, "tag")
+            self.assertEqual(verified_commit, expected_commit)
+
+        workflow = (Path(__file__).parents[1] / ".github" / "workflows" / "release.yml").read_text()
+        self.assertIn('remote_tag_ref="refs/retro-release-tags/${GITHUB_REF_NAME}"', workflow)
+        self.assertIn('"refs/tags/${GITHUB_REF_NAME}:${remote_tag_ref}"', workflow)
+
     def test_workflow_orders_future_release_certification_and_forbids_overwrite(self):
         workflow = (Path(__file__).parents[1] / ".github" / "workflows" / "release.yml").read_text()
         ordered = [

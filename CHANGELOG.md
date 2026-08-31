@@ -4,6 +4,13 @@ All notable changes follow [Keep a Changelog](https://keepachangelog.com/en/1.1.
 
 ## [Unreleased]
 
+## [2.1.2] - 2026-08-31
+
+### Fixed
+
+- Restored the authoritative remote annotated tag into an isolated verification ref before release identity checks, preventing the checkout action's peeled commit ref from being mistaken for a lightweight release tag.
+- Added a Git integration regression that reproduces the peeled local tag state and proves the remote annotated tag object and exact commit are recovered without moving the public tag.
+
 ## [2.1.1] - 2026-08-31
 
 ### Changed
