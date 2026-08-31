@@ -1,0 +1,53 @@
+name: Future release preflight
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Canonical MAJOR.MINOR.PATCH version that does not yet have a tag or Release
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-preflight
+  cancel-in-progress: false
+
+jobs:
+  protected-pre-tag-preflight:
+    runs-on: ubuntu-latest
+    environment: release
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          ref: main
+          fetch-depth: 0
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
+        with:
+          python-version: "3.12"
+      - name: Positively verify immutable-release prerequisites before tag creation
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          IMMUTABLE_RELEASE_ADMIN_TOKEN: ${{ secrets.IMMUTABLE_RELEASE_ADMIN_TOKEN }}
+          REQUESTED_VERSION: ${{ inputs.version }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "${REQUESTED_VERSION}" = "$(cat VERSION)"
+          candidate_commit="$(git rev-parse HEAD)"
+          test "${candidate_commit}" = "$(git rev-parse refs/remotes/origin/main)"
+          test -z "$(git status --porcelain --untracked-files=all)"
+          python scripts/release_certification.py repository-preflight \
+            --repo "${GITHUB_REPOSITORY}" \
+            --tag "v${REQUESTED_VERSION}" \
+            --expected-commit "${candidate_commit}" \
+            --workflow-run-id "${GITHUB_RUN_ID}" \
+            | tee "$RUNNER_TEMP/release-preflight.json"
+      - name: Preserve protected pre-tag evidence
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
+        with:
+          name: release-preflight-v${{ inputs.version }}
+          path: ${{ runner.temp }}/release-preflight.json
+          if-no-files-found: error

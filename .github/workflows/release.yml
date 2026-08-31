@@ -7,33 +7,81 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
 jobs:
   metadata:
     runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.identity.outputs.version }}
+      candidate_commit: ${{ steps.identity.outputs.candidate_commit }}
     steps:
-      - uses: actions/checkout@v5
-      - name: Check tag, version, and release notes
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          fetch-depth: 0
+      - name: Establish annotated tag and default-branch identity
+        id: identity
+        shell: bash
         run: |
-          test "${GITHUB_REF_NAME}" = "v$(cat VERSION)"
+          set -euo pipefail
+          version="$(cat VERSION)"
+          test "${GITHUB_REF_NAME}" = "v${version}"
           test -s "docs/releases/${GITHUB_REF_NAME}.md"
+          test "$(git cat-file -t "refs/tags/${GITHUB_REF_NAME}")" = "tag"
+          candidate_commit="$(git rev-parse "${GITHUB_REF_NAME}^{commit}")"
+          main_commit="$(git rev-parse refs/remotes/origin/main)"
+          test "${candidate_commit}" = "${main_commit}"
+          test "$(git rev-parse HEAD)" = "${candidate_commit}"
+          echo "version=${version}" >> "${GITHUB_OUTPUT}"
+          echo "candidate_commit=${candidate_commit}" >> "${GITHUB_OUTPUT}"
+          echo "state=RELEASE CANDIDATE" >> "${GITHUB_STEP_SUMMARY}"
+
+  immutable-preflight:
+    needs: metadata
+    runs-on: ubuntu-latest
+    environment: release
+    permissions:
+      actions: read
+      contents: read
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
+        with:
+          python-version: "3.12"
+      - name: Require GitHub immutable-release enforcement before any release build
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          IMMUTABLE_RELEASE_ADMIN_TOKEN: ${{ secrets.IMMUTABLE_RELEASE_ADMIN_TOKEN }}
+        run: |
+          python scripts/release_certification.py preflight \
+            --repo "${GITHUB_REPOSITORY}" \
+            --tag "${GITHUB_REF_NAME}" \
+            --expected-commit "${{ needs.metadata.outputs.candidate_commit }}"
 
   native:
-    needs: metadata
+    needs: [metadata, immutable-preflight]
     uses: ./.github/workflows/native.yml
     permissions:
       contents: read
 
   publish:
-    needs: [metadata, native]
+    needs: [metadata, immutable-preflight, native]
     runs-on: ubuntu-latest
+    environment: release
     permissions:
       contents: write
     steps:
-      - uses: actions/checkout@v5
-      - uses: actions/setup-python@v6
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
         with:
           python-version: "3.12"
-      - uses: actions/setup-node@v5
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
         with:
           node-version: "22"
           cache: "npm"
@@ -42,32 +90,11 @@ jobs:
       - name: Install Python release tooling
         run: python -m pip install "setuptools>=69" "build>=1.2,<2" ".[gui]"
       - name: Download gated native artifacts
-        uses: actions/download-artifact@v5
+        uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0 # v5
         with:
           pattern: native-*
           path: dist/native
           merge-multiple: true
-      - name: Verify native release set
-        run: |
-          python - <<'PY'
-          from pathlib import Path
-
-          root = Path("dist/native")
-          for platform in ("linux", "macos", "windows"):
-              archives = [
-                  path
-                  for path in root.glob(f"retro-web-ui-gui-*-{platform}-*")
-                  if not path.name.endswith(".sha256")
-              ]
-              if len(archives) != 1:
-                  raise SystemExit(f"Expected one {platform} archive, found: {archives}")
-              checksum = archives[0].with_name(archives[0].name + ".sha256")
-              report = list(root.glob(f"native-report-{platform}-*.json"))
-              if not checksum.is_file() or len(report) != 1:
-                  raise SystemExit(f"Incomplete {platform} release set")
-          PY
-          cd dist/native
-          sha256sum --check *.sha256
       - name: Run publication gates
         env:
           QT_QPA_PLATFORM: offscreen
@@ -83,20 +110,98 @@ jobs:
           python tests/package_smoke.py "$RUNNER_TEMP/retro-cli-a" --compare "$RUNNER_TEMP/retro-cli-b"
           git diff --check
           test -z "$(git status --porcelain --untracked-files=all)"
-      - name: Package reproducibly
+      - name: Package reproducibly and bind the exact release set
         run: |
           python scripts/package_skill.py
           python scripts/package_cli.py
-      - uses: softprops/action-gh-release@v3
+          python scripts/release_certification.py manifest \
+            --root dist \
+            --version "${{ needs.metadata.outputs.version }}" \
+            --expected-commit "${{ needs.metadata.outputs.candidate_commit }}" \
+            --output "$RUNNER_TEMP/release-manifest.json"
+      - name: Create draft through create-only API and upload exact assets
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          python scripts/release_certification.py create-draft \
+            --repo "${GITHUB_REPOSITORY}" \
+            --tag "${GITHUB_REF_NAME}" \
+            --expected-commit "${{ needs.metadata.outputs.candidate_commit }}" \
+            --manifest "$RUNNER_TEMP/release-manifest.json" \
+            --root dist \
+            --body "docs/releases/${GITHUB_REF_NAME}.md" \
+            --output "$RUNNER_TEMP/draft-creation.json"
+      - name: Verify the complete draft before publication
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          python scripts/release_certification.py verify-draft \
+            --repo "${GITHUB_REPOSITORY}" \
+            --tag "${GITHUB_REF_NAME}" \
+            --expected-commit "${{ needs.metadata.outputs.candidate_commit }}" \
+            --manifest "$RUNNER_TEMP/release-manifest.json" \
+            --draft-creation "$RUNNER_TEMP/draft-creation.json"
+      - name: Publish the verified draft
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          python scripts/release_certification.py publish-draft \
+            --repo "${GITHUB_REPOSITORY}" \
+            --tag "${GITHUB_REF_NAME}" \
+            --expected-commit "${{ needs.metadata.outputs.candidate_commit }}" \
+            --manifest "$RUNNER_TEMP/release-manifest.json" \
+            --draft-creation "$RUNNER_TEMP/draft-creation.json" \
+            --output "$RUNNER_TEMP/publication-record.json"
+          echo "state=PUBLISHED — PENDING RELEASE VERIFICATION" >> "${GITHUB_STEP_SUMMARY}"
+      - name: Re-download and verify every public asset and checksum
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          python scripts/release_certification.py verify-public \
+            --repo "${GITHUB_REPOSITORY}" \
+            --tag "${GITHUB_REF_NAME}" \
+            --expected-commit "${{ needs.metadata.outputs.candidate_commit }}" \
+            --manifest "$RUNNER_TEMP/release-manifest.json" \
+            --draft-creation "$RUNNER_TEMP/draft-creation.json" \
+            --output "$RUNNER_TEMP/public-verification.json"
+      - name: Verify GitHub release provenance
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          verified=false
+          for attempt in 1 2 3 4 5 6; do
+            if gh release verify "${GITHUB_REF_NAME}" --repo "${GITHUB_REPOSITORY}" --format json > "$RUNNER_TEMP/provenance-verification.json"; then
+              verified=true
+              break
+            fi
+            if test "${attempt}" -lt 6; then sleep 10; fi
+          done
+          test "${verified}" = true
+          test -s "$RUNNER_TEMP/provenance-verification.json"
+          python -m json.tool "$RUNNER_TEMP/provenance-verification.json" >/dev/null
+      - name: Certify GitHub-enforced immutability
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          python scripts/release_certification.py certify \
+            --repo "${GITHUB_REPOSITORY}" \
+            --tag "${GITHUB_REF_NAME}" \
+            --expected-commit "${{ needs.metadata.outputs.candidate_commit }}" \
+            --manifest "$RUNNER_TEMP/release-manifest.json" \
+            --public-verification "$RUNNER_TEMP/public-verification.json" \
+            --provenance "$RUNNER_TEMP/provenance-verification.json" \
+            --output "$RUNNER_TEMP/release-certification.json"
+          echo "state=RELEASED — GitHub-Enforced Immutable" >> "${GITHUB_STEP_SUMMARY}"
+      - name: Preserve release certification evidence
+        if: always()
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
         with:
-          files: |
-            dist/*.zip
-            dist/*.whl
-            dist/*.tar.gz
-            dist/*.sha256
-            dist/native/*
-          body_path: docs/releases/${{ github.ref_name }}.md
-          fail_on_unmatched_files: true
-          draft: false
-          prerelease: false
-          make_latest: true
+          name: release-certification-${{ github.ref_name }}
+          path: |
+            ${{ runner.temp }}/release-manifest.json
+            ${{ runner.temp }}/draft-creation.json
+            ${{ runner.temp }}/publication-record.json
+            ${{ runner.temp }}/public-verification.json
+            ${{ runner.temp }}/provenance-verification.json
+            ${{ runner.temp }}/release-certification.json
+          if-no-files-found: warn

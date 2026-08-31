@@ -44,11 +44,11 @@ jobs:
     env:
       QT_QPA_PLATFORM: offscreen
     steps:
-      - uses: actions/checkout@v5
-      - uses: actions/setup-python@v6
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
         with:
           python-version: "3.12"
-      - uses: actions/setup-node@v5
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
         with:
           node-version: "22"
       - name: Install pinned native build dependencies
@@ -76,7 +76,7 @@ jobs:
           python -m json.tool dist/native/native-report-*.json
           python -c "import json, os; from pathlib import Path; reports=list(Path('dist/native').glob('native-report-*.json')); assert len(reports) == 1; report=json.loads(reports[0].read_text()); assert report['candidateCommit'] == os.environ['GITHUB_SHA']; assert report['candidateClean'] is True; assert report['workspaceLifecycle']['restore']['privacyScan'] == 'clean'; files=list(Path('dist/native').glob('*.sha256')); assert files; print('checksums', len(files))"
       - name: Upload native release candidates
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
         with:
           name: native-${{ matrix.platform }}
           path: dist/native/*
