@@ -29,8 +29,11 @@ jobs:
           version="$(cat VERSION)"
           test "${GITHUB_REF_NAME}" = "v${version}"
           test -s "docs/releases/${GITHUB_REF_NAME}.md"
-          test "$(git cat-file -t "refs/tags/${GITHUB_REF_NAME}")" = "tag"
-          candidate_commit="$(git rev-parse "${GITHUB_REF_NAME}^{commit}")"
+          remote_tag_ref="refs/retro-release-tags/${GITHUB_REF_NAME}"
+          git fetch --force --no-tags origin \
+            "refs/tags/${GITHUB_REF_NAME}:${remote_tag_ref}"
+          test "$(git cat-file -t "${remote_tag_ref}")" = "tag"
+          candidate_commit="$(git rev-parse "${remote_tag_ref}^{commit}")"
           main_commit="$(git rev-parse refs/remotes/origin/main)"
           test "${candidate_commit}" = "${main_commit}"
           test "$(git rev-parse HEAD)" = "${candidate_commit}"
