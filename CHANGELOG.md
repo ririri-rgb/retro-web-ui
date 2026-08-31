@@ -4,6 +4,13 @@ All notable changes follow [Keep a Changelog](https://keepachangelog.com/en/1.1.
 
 ## [Unreleased]
 
+## [2.1.3] - 2026-08-31
+
+### Fixed
+
+- Prevented repository credentials from crossing hosts when GitHub redirects an Actions artifact download to signed storage, while retaining authentication on same-host redirects and rejecting non-HTTPS destinations.
+- Added regression coverage for credential stripping, same-host authentication, and downgrade rejection after the protected `v2.1.2` run reproduced the cross-host artifact download failure before native builds or publication.
+
 ## [2.1.2] - 2026-08-31
 
 ### Fixed

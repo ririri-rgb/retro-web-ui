@@ -439,6 +439,37 @@ class ManifestTests(unittest.TestCase):
 
 
 class PolicyRegressionTests(unittest.TestCase):
+    def test_artifact_redirect_strips_credentials_cross_host_and_rejects_http(self):
+        handler = certification.CredentialSafeRedirectHandler()
+        request = urllib.request.Request(
+            "https://api.github.com/repos/example/project/actions/artifacts/1/zip",
+            headers={"Authorization": "Bearer secret", "Proxy-Authorization": "proxy-secret"},
+        )
+        redirected = handler.redirect_request(
+            request,
+            None,
+            302,
+            "Found",
+            {},
+            "https://release-assets.githubusercontent.com/signed-artifact.zip",
+        )
+        self.assertIsNotNone(redirected)
+        self.assertIsNone(redirected.get_header("Authorization"))
+        self.assertIsNone(redirected.get_header("Proxy-Authorization"))
+
+        same_host = handler.redirect_request(
+            request,
+            None,
+            302,
+            "Found",
+            {},
+            "https://api.github.com/repos/example/project/actions/artifacts/1/zip?redirected=1",
+        )
+        self.assertEqual(same_host.get_header("Authorization"), "Bearer secret")
+
+        with self.assertRaisesRegex(certification.CertificationError, "must use HTTPS"):
+            handler.redirect_request(request, None, 302, "Found", {}, "http://example.invalid/artifact.zip")
+
     def test_release_metadata_recovers_remote_annotated_tag_after_checkout_peels_local_ref(self):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)

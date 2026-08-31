@@ -16,13 +16,13 @@ v2.1.0では、localなProject/Session workspaceを追加しました。source�
 project pathを登録し、変換ごとのlifecycle、hash付きbaseline/Core/Git evidence、再起動後の中断状態、
 session比較を保持します。復元したCodex threadはreview用に読み込むだけで、turnの自動再開やsource rollbackでは
 ありません。missing/changed artifactは明示し、historical evidenceを現在のworking treeとして表示しません。
-このworkspaceはv2.1.2 native archiveに含まれます。
+このworkspaceはv2.1.3 native archiveに含まれます。
 
 ![Retro Web UI desktop GUI](screenshots/gui/desktop-xp.png)
 
-[v2.1.2 release](https://github.com/ririri-rgb/retro-web-ui/releases/tag/v2.1.2)から
+[v2.1.3 release](https://github.com/ririri-rgb/retro-web-ui/releases/tag/v2.1.3)から
 macOS arm64 / Windows x86_64 / Linux x86_64用native archiveを取得できます。PythonとQtは同梱しますが、Codexは同梱しません。
-macOS版は検証済みad-hoc署名ですがnotarizeされておらず、Windows版はunsignedです。v2.1.2 Linux版はUbuntu 22.04でbuildし、GLIBC 2.35以下をgateとします。通常のdesktop display stackも必要です。起動前にSHA-256を確認してください。
+macOS版は検証済みad-hoc署名ですがnotarizeされておらず、Windows版はunsignedです。v2.1.3 Linux版はUbuntu 22.04でbuildし、GLIBC 2.35以下をgateとします。通常のdesktop display stackも必要です。起動前にSHA-256を確認してください。
 
 checkoutから起動する場合:
 
@@ -47,18 +47,18 @@ ChatGPTでsign in済みである必要があります。GUIはAPI keyを要求�
 Codexの`$skill-installer`へ、versionを固定したGitHub上のSkill directoryを指定します。
 
 ```text
-$skill-installer install https://github.com/ririri-rgb/retro-web-ui/tree/v2.1.2/skills/retro-web-ui
+$skill-installer install https://github.com/ririri-rgb/retro-web-ui/tree/v2.1.3/skills/retro-web-ui
 ```
 
 またはtagged releaseをcloneして、user scopeへコピーします。
 
 ```bash
-git clone --branch v2.1.2 --depth 1 https://github.com/ririri-rgb/retro-web-ui.git
+git clone --branch v2.1.3 --depth 1 https://github.com/ririri-rgb/retro-web-ui.git
 mkdir -p "$HOME/.agents/skills"
 cp -R retro-web-ui/skills/retro-web-ui "$HOME/.agents/skills/"
 ```
 
-リポジトリ限定で使う場合は `.agents/skills/retro-web-ui/` へコピーします。Skill本体とCLI runtimeはPython 3.9以上だけで動作し、第三者runtime packageは不要です。`v2.1.2`は現在のdesktop + CLI + Skill releaseで、standalone Skill構成と`v1.0.0`のlegacy helper entry pointを維持しています。
+リポジトリ限定で使う場合は `.agents/skills/retro-web-ui/` へコピーします。Skill本体とCLI runtimeはPython 3.9以上だけで動作し、第三者runtime packageは不要です。`v2.1.3`は現在のdesktop + CLI + Skill releaseで、standalone Skill構成と`v1.0.0`のlegacy helper entry pointを維持しています。
 
 CLIをcheckoutから仮想環境へ導入する場合:
 
@@ -99,7 +99,7 @@ Skillは同梱CLIのmanifest整合を確認し、対象repositoryとapp候補を
 - closed Shadow DOM、Canvas/WebGLのみのUI、cross-origin iframe、sourceのない生成bundleは安全な変換対象外です。
 - Next/Radix、MUI/Emotion、Bootstrap、Naive UIの代表ケースは検証済みですが、SSR hydration、portal、virtualized list、component library、CSS-in-JSは対象アプリごとのruntime検証が必要です。
 - Microsoftのfont、icon、bitmap、wallpaper、sound等は同梱していません。
-- v2.1.2 native archiveはDeveloper ID notarization / Authenticode signingを行っておらず、自動更新もありません。checksumを確認し、OSの明示的なlocal-app許可手順を使ってください。
+- v2.1.3 native archiveはDeveloper ID notarization / Authenticode signingを行っておらず、自動更新もありません。checksumを確認し、OSの明示的なlocal-app許可手順を使ってください。
 - GUIはtarget appのbrowser/runtimeを推測installしません。Before/Afterはユーザーが許可した既存runtimeから得たevidenceを表示します。
 
 実証範囲・未検証範囲は[Compatibility evidence](docs/compatibility.md)、v1実行済み検証は[Validation report](docs/validation-report.md)、v1.0.0 review判断の根拠は[Final validation report](docs/final-validation-report.md)、v1.1.0 CLI + Skillの根拠は[CLI + Skill validation report](docs/cli-validation-report.md)、v2 GUIは[GUI engineering report](docs/gui-validation-report.md)、v2.0.1配布hardeningは[Distribution validation report](docs/distribution-validation-report.md)に分けて記録しています。完全な使用方法、troubleshooting、licenseは[英語README](README.md)を参照してください。
