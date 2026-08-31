@@ -152,14 +152,32 @@ class GitHubAPI:
         if self.token:
             headers["Authorization"] = f"Bearer {self.token}"
         request = urllib.request.Request(f"{API_ROOT}{path}", headers=headers, method="GET")
+        opener = urllib.request.build_opener(CredentialSafeRedirectHandler())
         try:
-            with urllib.request.urlopen(request, timeout=120) as response:
+            with opener.open(request, timeout=120) as response:
                 require(response.status == 200, f"GitHub artifact download returned HTTP {response.status}")
                 content = response.read(maximum_bytes + 1)
         except (urllib.error.URLError, OSError, TimeoutError) as error:
             raise CertificationError(f"GitHub artifact download failed for {path}: {error}") from error
         require(len(content) <= maximum_bytes, "GitHub preflight artifact exceeds the size limit")
         return content
+
+
+class CredentialSafeRedirectHandler(urllib.request.HTTPRedirectHandler):
+    """Follow GitHub downloads without forwarding credentials across hosts."""
+
+    def redirect_request(self, request, fp, code, message, headers, new_url):
+        redirected = super().redirect_request(request, fp, code, message, headers, new_url)
+        if redirected is None:
+            return None
+        source = urllib.parse.urlsplit(request.full_url)
+        destination = urllib.parse.urlsplit(redirected.full_url)
+        if destination.scheme != "https":
+            raise CertificationError("GitHub artifact download redirect must use HTTPS")
+        if source.hostname != destination.hostname:
+            redirected.remove_header("Authorization")
+            redirected.remove_header("Proxy-Authorization")
+        return redirected
 
 
 def encoded(value: str) -> str:
