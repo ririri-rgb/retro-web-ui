@@ -4,6 +4,18 @@ All notable changes follow [Keep a Changelog](https://keepachangelog.com/en/1.1.
 
 ## [Unreleased]
 
+## [2.1.1] - 2026-08-31
+
+### Changed
+
+- Added a protected, manually approved pre-tag preflight that authoritatively verifies GitHub immutable-release enablement, unused tag and Release identity, and the exact default-branch commit before tag creation.
+- Hardened tag-triggered publication to resolve and bind the exact successful preflight run, create one draft Release by immutable ID, upload only the manifest-bound asset set, and independently verify every public byte before certification.
+- Pinned third-party GitHub Actions by commit and required Sigstore/DSSE provenance to bind the exact release tag and every expected asset digest.
+
+### Security
+
+- Release publication now fails closed on missing Administration-read credentials, mutable or malformed GitHub state, tag or Release collisions, provenance mismatches, unexpected assets, and any final `immutable` value other than the JSON boolean `true`.
+
 ## [2.1.0] - 2026-08-31
 
 ### Added
