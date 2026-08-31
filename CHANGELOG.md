@@ -4,6 +4,13 @@ All notable changes follow [Keep a Changelog](https://keepachangelog.com/en/1.1.
 
 ## [Unreleased]
 
+## [2.1.4] - 2026-08-31
+
+### Fixed
+
+- Required both the decoded DSSE statement and the verified Sigstore statement to contain exactly one release package subject for the expected repository and tag whose SHA-1 is the authoritative annotated tag object.
+- Added fail-closed regression coverage for missing, wrong-tag, mismatched-object, and duplicate release subjects after the independent `v2.1.3` saturation review found that asset and tag-string checks alone did not enforce this binding.
+
 ## [2.1.3] - 2026-08-31
 
 ### Fixed
