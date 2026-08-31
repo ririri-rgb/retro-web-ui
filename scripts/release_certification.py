@@ -436,12 +436,31 @@ def validate_local_assets(root: Path, manifest: Mapping[str, Any]) -> dict[str, 
     return paths
 
 
-def validate_release_statement(statement: Any, manifest: Mapping[str, Any], tag: str, context: str) -> None:
+def validate_release_statement(
+    statement: Any,
+    manifest: Mapping[str, Any],
+    repo: str,
+    tag: str,
+    tag_object: str,
+    context: str,
+) -> None:
     require(isinstance(statement, dict), f"{context} statement is malformed")
     predicate = statement.get("predicate")
     require(isinstance(predicate, dict) and predicate.get("tag") == tag, f"{context} tag does not match")
     subjects = statement.get("subject")
     require(isinstance(subjects, list), f"{context} subjects are missing")
+    release_uri = f"pkg:github/{repo}@{tag}"
+    release_subjects = [
+        subject
+        for subject in subjects
+        if isinstance(subject, dict) and subject.get("uri") == release_uri
+    ]
+    require(len(release_subjects) == 1, f"{context} must contain exactly one release subject for {release_uri}")
+    release_digest = release_subjects[0].get("digest")
+    require(
+        isinstance(release_digest, dict) and release_digest.get("sha1") == tag_object,
+        f"{context} release subject does not bind annotated tag object {tag_object}",
+    )
     attested: set[tuple[str, str]] = set()
     for subject in subjects:
         if not isinstance(subject, dict) or not isinstance(subject.get("digest"), dict):
@@ -453,7 +472,7 @@ def validate_release_statement(statement: Any, manifest: Mapping[str, Any], tag:
         require((name, expected["sha256"]) in attested, f"{context} does not bind expected asset: {name}")
 
 
-def validate_provenance(provenance: Any, manifest: Mapping[str, Any], tag: str) -> None:
+def validate_provenance(provenance: Any, manifest: Mapping[str, Any], repo: str, tag: str, tag_object: str) -> None:
     require(isinstance(provenance, dict), "release provenance verification output is not an object")
     attestation = provenance.get("attestation")
     verification_result = provenance.get("verificationResult")
@@ -474,8 +493,8 @@ def validate_provenance(provenance: Any, manifest: Mapping[str, Any], tag: str) 
         statement = json.loads(base64.b64decode(payload, validate=True))
     except (ValueError, UnicodeDecodeError, json.JSONDecodeError) as error:
         raise CertificationError("release provenance DSSE payload is malformed") from error
-    validate_release_statement(statement, manifest, tag, "release provenance DSSE")
-    validate_release_statement(verification_result.get("statement"), manifest, tag, "verified release provenance")
+    validate_release_statement(statement, manifest, repo, tag, tag_object, "release provenance DSSE")
+    validate_release_statement(verification_result.get("statement"), manifest, repo, tag, tag_object, "verified release provenance")
 
 
 def validate_remote_assets(release: Mapping[str, Any], manifest: Mapping[str, Any]) -> dict[str, Mapping[str, Any]]:
@@ -729,9 +748,9 @@ def command_certify(args: argparse.Namespace) -> dict[str, Any]:
     require(public_record.get("tag") == args.tag and public_record.get("expectedCommit") == args.expected_commit, "public verification record tag or commit mismatch")
     require(public_record.get("publicAssetsVerified") == len(expected_assets(manifest)), "public verification asset count mismatch")
     require(public_record.get("manifestSha256") == sha256(args.manifest), "manifest changed after public-byte verification")
-    validate_provenance(provenance, manifest, args.tag)
     api = GitHubAPI(token_from_env(args.token_env))
     identity = verify_tag_identity(api, args.repo, args.tag, args.expected_commit)
+    validate_provenance(provenance, manifest, args.repo, args.tag, identity["tagObject"])
     release = get_release(api, args.repo, args.tag)
     require(release.get("id") == public_record.get("releaseId"), "final release ID does not match public-byte verification")
     verify_release_shape(release, manifest, draft=False)

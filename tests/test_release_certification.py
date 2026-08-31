@@ -249,7 +249,10 @@ class ManifestTests(unittest.TestCase):
         manifest = {"assets": [{"name": "artifact.zip", "size": 4, "sha256": digest(b"data")}]}
         statement = {
             "predicate": {"tag": TAG},
-            "subject": [{"name": "artifact.zip", "digest": {"sha256": digest(b"data")}}],
+            "subject": [
+                {"uri": f"pkg:github/{REPO}@{TAG}", "digest": {"sha1": TAG_OBJECT}},
+                {"name": "artifact.zip", "digest": {"sha256": digest(b"data")}},
+            ],
         }
         provenance = {
             "attestation": {"bundle": {"dsseEnvelope": {"payload": b64encode(json.dumps(statement).encode()).decode()}}},
@@ -260,18 +263,60 @@ class ManifestTests(unittest.TestCase):
                 "verifiedTimestamps": [{"type": "Tlog", "uri": "https://rekor.example", "timestamp": "2026-01-01T00:00:00Z"}],
             },
         }
-        certification.validate_provenance(provenance, manifest, TAG)
+        certification.validate_provenance(provenance, manifest, REPO, TAG, TAG_OBJECT)
         provenance["attestation"]["bundle"]["dsseEnvelope"]["payload"] = b64encode(
             json.dumps({"predicate": {"tag": "v9.9.9"}, "subject": statement["subject"]}).encode()
         ).decode()
         with self.assertRaisesRegex(certification.CertificationError, "tag does not match"):
-            certification.validate_provenance(provenance, manifest, TAG)
+            certification.validate_provenance(provenance, manifest, REPO, TAG, TAG_OBJECT)
+
+    def test_provenance_requires_exact_release_subject_tag_object_binding(self):
+        manifest = {"assets": [{"name": "artifact.zip", "size": 4, "sha256": digest(b"data")}]}
+
+        def provenance(statement):
+            return {
+                "attestation": {"bundle": {"dsseEnvelope": {"payload": b64encode(json.dumps(statement).encode()).decode()}}},
+                "verificationResult": {
+                    "mediaType": certification.VERIFICATION_RESULT_MEDIA_TYPE,
+                    "statement": statement,
+                    "signature": {"certificate": {"issuer": "GitHub"}},
+                    "verifiedTimestamps": [{"type": "Tlog", "uri": "https://rekor.example", "timestamp": "2026-01-01T00:00:00Z"}],
+                },
+            }
+
+        asset = {"name": "artifact.zip", "digest": {"sha256": digest(b"data")}}
+        invalid_release_subjects = (
+            [],
+            [{"uri": f"pkg:github/{REPO}@v9.9.9", "digest": {"sha1": TAG_OBJECT}}],
+            [{"uri": f"pkg:github/{REPO}@{TAG}", "digest": {"sha1": "c" * 40}}],
+            [
+                {"uri": f"pkg:github/{REPO}@{TAG}", "digest": {"sha1": TAG_OBJECT}},
+                {"uri": f"pkg:github/{REPO}@{TAG}", "digest": {"sha1": TAG_OBJECT}},
+            ],
+        )
+        for release_subjects in invalid_release_subjects:
+            with self.subTest(release_subjects=release_subjects):
+                statement = {"predicate": {"tag": TAG}, "subject": [*release_subjects, asset]}
+                with self.assertRaisesRegex(certification.CertificationError, "release subject"):
+                    certification.validate_provenance(provenance(statement), manifest, REPO, TAG, TAG_OBJECT)
+
+        valid_statement = {
+            "predicate": {"tag": TAG},
+            "subject": [{"uri": f"pkg:github/{REPO}@{TAG}", "digest": {"sha1": TAG_OBJECT}}, asset],
+        }
+        verified_mismatch = provenance(valid_statement)
+        verified_mismatch["verificationResult"]["statement"]["subject"][0]["digest"]["sha1"] = "c" * 40
+        with self.assertRaisesRegex(certification.CertificationError, "verified release provenance release subject"):
+            certification.validate_provenance(verified_mismatch, manifest, REPO, TAG, TAG_OBJECT)
 
     def test_provenance_requires_structured_successful_verification_result(self):
         manifest = {"assets": [{"name": "artifact.zip", "size": 4, "sha256": digest(b"data")}]}
         statement = {
             "predicate": {"tag": TAG},
-            "subject": [{"name": "artifact.zip", "digest": {"sha256": digest(b"data")}}],
+            "subject": [
+                {"uri": f"pkg:github/{REPO}@{TAG}", "digest": {"sha1": TAG_OBJECT}},
+                {"name": "artifact.zip", "digest": {"sha256": digest(b"data")}},
+            ],
         }
         encoded_statement = b64encode(json.dumps(statement).encode()).decode()
         base = {"attestation": {"bundle": {"dsseEnvelope": {"payload": encoded_statement}}}}
@@ -283,7 +328,7 @@ class ManifestTests(unittest.TestCase):
         for result in invalid_results:
             with self.subTest(result=result):
                 with self.assertRaises(certification.CertificationError):
-                    certification.validate_provenance({**base, "verificationResult": result}, manifest, TAG)
+                    certification.validate_provenance({**base, "verificationResult": result}, manifest, REPO, TAG, TAG_OBJECT)
 
     def test_tag_triggered_preflight_is_bound_to_successful_manual_run(self):
         run_id = 123456

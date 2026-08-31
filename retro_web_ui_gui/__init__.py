@@ -9,7 +9,7 @@ from __future__ import annotations
 
 from typing import Any
 
-__version__ = "2.1.3"
+__version__ = "2.1.4"
 __all__ = ["MainWindow", "__version__"]
 
 
