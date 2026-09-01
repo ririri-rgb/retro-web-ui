@@ -1,6 +1,6 @@
 # Retro Web UI
 
-[日本語](README.ja.md)
+English | [日本語](README.ja.md) | [简体中文](README.zh-CN.md)
 
 [![CI](https://github.com/ririri-rgb/retro-web-ui/actions/workflows/ci.yml/badge.svg)](https://github.com/ririri-rgb/retro-web-ui/actions/workflows/ci.yml)
 [![GitHub release](https://img.shields.io/github/v/release/ririri-rgb/retro-web-ui)](https://github.com/ririri-rgb/retro-web-ui/releases/latest)

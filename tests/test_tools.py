@@ -533,7 +533,7 @@ class RepositoryTests(unittest.TestCase):
 
     def test_repository_markdown_links_resolve(self):
         import re
-        markdown_files = [ROOT / "README.md", ROOT / "README.ja.md", ROOT / "THIRD_PARTY_NOTICES.md"]
+        markdown_files = [ROOT / "README.md", ROOT / "README.ja.md", ROOT / "README.zh-CN.md", ROOT / "THIRD_PARTY_NOTICES.md"]
         markdown_files.extend(sorted((ROOT / "docs").glob("*.md")))
         markdown_files.extend(sorted((ROOT / "docs" / "releases").glob("*.md")))
         for path in markdown_files:
@@ -544,6 +544,18 @@ class RepositoryTests(unittest.TestCase):
                     continue
                 with self.subTest(path=path.relative_to(ROOT), target=target):
                     self.assertTrue((path.parent / clean).exists(), target)
+
+    def test_readme_language_switches_are_complete(self):
+        readmes = {
+            "README.md": {"README.ja.md", "README.zh-CN.md"},
+            "README.ja.md": {"README.md", "README.zh-CN.md"},
+            "README.zh-CN.md": {"README.md", "README.ja.md"},
+        }
+        for name, targets in readmes.items():
+            text = (ROOT / name).read_text(encoding="utf-8")
+            with self.subTest(readme=name):
+                for target in targets:
+                    self.assertIn(f"]({target})", text)
 
     def test_repository_validator(self):
         result = subprocess.run(
