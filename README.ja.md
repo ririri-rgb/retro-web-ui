@@ -1,6 +1,6 @@
 # Retro Web UI
 
-[English](README.md)
+[English](README.md) | 日本語 | [简体中文](README.zh-CN.md)
 
 既存Webアプリの機能を維持しながら、UIを Windows 98 / Windows XP / Windows 7 / 2000年代の日本製Windowsフリーソフト風へ変換するデスクトップGUI + CLI + Codex Skillです。単なる配色変更ではなく、card→group box、toggle→checkbox、settings sidebar→property sheet等を意味に応じて再構成します。
 
